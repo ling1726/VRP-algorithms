@@ -1,4 +1,4 @@
-from node import Node
+from LA.node import Node
 
 # Charger class with charger specific logic
 class Charger(Node):

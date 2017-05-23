@@ -10,3 +10,5 @@ class Node(object):
         self.windowStart = 0.0
         self.windowEnd = 0.0
 
+    def __hash__(self):
+        return hash(self.id)

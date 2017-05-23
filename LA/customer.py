@@ -1,4 +1,4 @@
-from node import Node
+from LA.node import Node
 
 # Customer class with customer specific logic
 class Customer(Node):
