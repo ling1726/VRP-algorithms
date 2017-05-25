@@ -14,7 +14,7 @@ class Solution(object):
     def __init__(self, routes):
         self.Routes = routes #routes is a nested Python list [[Node..][Node..]] of Node objects
         self.NumVehicles = len(routes)
-        self.Cost = 0.0
+        self.Cost = 0.
         self.calculateCost(routes)
 
     def calculateCost(self, routes):
@@ -68,7 +68,7 @@ def insertionFeasible(route, insertCost, customer, pred, succ):
     capacityOK = float(customer.demand) + sum([float(point.demand) for point in route]) < float(inst.loadCapacity)
     timeWindowsOK = float(pred.windowStart) <= float(customer.windowStart) and float(customer.windowStart) <= float(succ.windowStart)
     batteryCapacityOK = float(inst.fuelConsumptionRate) * (Solution([route]).Cost + insertCost) <= float(inst.fuelCapacity) #avg velocity here?
-    return capacityOK and timeWindowsOK and batteryCapacityOK
+    return capacityOK and timeWindowsOK #and batteryCapacityOK
 
 
 def _sortCustomersByAngle(customers):
