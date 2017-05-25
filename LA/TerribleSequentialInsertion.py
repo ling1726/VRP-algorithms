@@ -3,7 +3,7 @@ import argparse
 import logging
 import math
 from random import randint
-import instance as inst 
+import instance.instance as inst 
 #from LA.instance import instance as inst #IF ABOVE DOESNT WORK TRY UNCOMMENTING THIS ONE
 
 _randomPoint = None
