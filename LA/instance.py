@@ -3,6 +3,8 @@ import math
 
 from LA.charger import Charger
 from LA.customer import Customer
+#from charger import Charger #COMMENT OUT ABOVE, UNCOMMENT THESE TWO FOR SEQINS TO WORK
+#from customer import Customer
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -66,7 +68,9 @@ def parse():
                     node = Charger()
                 else:
                     node = Customer()
-
+                """
+                    Convert node entries to floats and ints here.
+                """
                 node.id = tokens[0]
                 node.x = tokens[2]
                 node.y = tokens[3]
@@ -89,7 +93,11 @@ def parse():
 
     parsed = True  # set parsed status as true
     fillDistanceMatrix()
-
+"""
+The min/max is there to avoid redundant information due to the arc symmetry?
+Also is a dict more efficient than 2-dim numpy array or Python list of lists?
+A dict seems less intuitive and more restrictive due to its unordered nature.
+"""
 def getValDistanceMatrix(node1, node2):
     return _distanceMatrix[(min(node1.id, node2.id),max(node1.id,node2.id))]
 
@@ -100,7 +108,16 @@ def putDistanceMatrix(node1, node2, value):
 
 def fillDistanceMatrix():
     other_nodes = set(nodes)
+
     for node1 in nodes:
         other_nodes.remove(node1)
         for node2 in other_nodes:
-            putDistanceMatrix(node1, node2, math.hypot(node1.x - node2.x, node1.y - node2.y))
+            """
+            node1 and node2 are strings not Node objects. Dict lookup is required.
+            """
+            Node1 = nodes[node1]
+            Node2 = nodes[node2]
+            """
+            x and y are stored as strings, must be converted to floats to do subtraction.
+            """
+            putDistanceMatrix(Node1, Node2, math.hypot(float(Node1.x) - float(Node2.x), float(Node1.y) - float(Node2.y)))
