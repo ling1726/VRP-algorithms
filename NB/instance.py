@@ -1,8 +1,8 @@
 import logging
 import math
 
-from instance.charger import Charger
-from instance.customer import Customer
+from NB.charger import Charger
+from NB.customer import Customer
 #from charger import Charger #COMMENT OUT ABOVE, UNCOMMENT THESE TWO FOR SEQINS TO WORK
 #from customer import Customer
 
