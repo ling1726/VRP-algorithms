@@ -78,12 +78,12 @@ def parse():
                     Convert node entries to floats and ints here.
                 """
                 node.id = tokens[0]
-                node.x = tokens[2]
-                node.y = tokens[3]
-                node.demand = tokens[4]
-                node.windowStart = tokens[5]
-                node.windowEnd = tokens[6]
-                node.serviceTime = tokens[7]
+                node.x = float(tokens[2])
+                node.y = float(tokens[3])
+                node.demand = float(tokens[4])
+                node.windowStart = float(tokens[5])
+                node.windowEnd = float(tokens[6])
+                node.serviceTime = float(tokens[7])
 
                 nodes[node.id] = node  # add a new node
                 if tokens[1] == 'f':
@@ -110,11 +110,12 @@ A dict seems less intuitive and more restrictive due to its unordered nature.
 def getValDistanceMatrix(node1, node2):
     if node1.id == node2.id:
         return 0
-    return _distanceMatrix[(min(node1.id, node2.id),max(node1.id,node2.id))]
+    return _distanceMatrix[(node1.id,node2.id)]
 
 
 def putDistanceMatrix(node1, node2, value):
-    _distanceMatrix[(min(node1.id, node2.id),max(node1.id,node2.id))] = value
+    _distanceMatrix[(node1.id, node2.id)] = value
+    _distanceMatrix[(node2.id, node1.id)] = value
 
 
 def fillDistanceMatrix():
