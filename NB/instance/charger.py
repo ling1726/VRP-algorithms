@@ -1,4 +1,4 @@
-from instance.node import Node
+from NB.instance.node import Node
 #from node import Node #UNCOMMENT THIS & COMMENT OUT ABOVE IMPORT FOR SEQINS TO WORK
 
 # Charger class with charger specific logic
