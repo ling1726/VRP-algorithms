@@ -26,6 +26,9 @@ adjacencyMatrix = {}
 
 _distanceMatrix = {}
 
+# the depot
+depot = None
+
 fuelCapacity = 0.0
 loadCapacity = 0.0
 fuelConsumptionRate = 0.0
@@ -48,12 +51,13 @@ def reset_data():
     customers.clear()
     adjacencyMatrix.clear()
     _distanceMatrix.clear()
+    depot = None
     parsed = False
 
 
 # parse the set file name
 def parse():
-    global nodes, customers, chargers, parsed, averageVelocity, fuelCapacity, loadCapacity, inverseFuellingRate, fuelConsumptionRate
+    global nodes, customers, chargers, parsed, averageVelocity, fuelCapacity, loadCapacity, inverseFuellingRate, fuelConsumptionRate, depot 
     if not filename: raise Exception('you are trying to parse before setting the filename!')
     reset_data()
 
@@ -62,9 +66,11 @@ def parse():
             if line.startswith("StingID"): continue  # skip first line or empty line
             tokens = line.split()
             if len(tokens) == 0: continue
-            if tokens[1] == 'f' or tokens[1] == 'c':
+            if tokens[1] == 'f' or tokens[1] == 'c' or tokens[1] == 'd':
                 node = None
                 if tokens[1] == 'f':
+                    node = Charger()
+                elif tokens[1] == 'd':
                     node = Charger()
                 else:
                     node = Customer()
@@ -82,6 +88,8 @@ def parse():
                 nodes[node.id] = node  # add a new node
                 if tokens[1] == 'f':
                     chargers[node.id] = node
+                elif tokens[1] == 'd':
+                    depot = node
                 else:
                     customers[node.id] = node
 
@@ -93,6 +101,7 @@ def parse():
 
     parsed = True  # set parsed status as true
     fillDistanceMatrix()
+
 """
 The min/max is there to avoid redundant information due to the arc symmetry?
 Also is a dict more efficient than 2-dim numpy array or Python list of lists?
@@ -123,3 +132,5 @@ def fillDistanceMatrix():
             x and y are stored as strings, must be converted to floats to do subtraction.
             """
             putDistanceMatrix(Node1, Node2, math.hypot(float(Node1.x) - float(Node2.x), float(Node1.y) - float(Node2.y)))
+
+
