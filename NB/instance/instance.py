@@ -25,6 +25,8 @@ parsed = False
 adjacencyMatrix = {}
 
 _distanceMatrix = {}
+# the depot
+depot = None
 
 fuelCapacity = 0.0
 loadCapacity = 0.0
@@ -46,6 +48,7 @@ def reset_data():
     nodes.clear()
     chargers.clear()
     customers.clear()
+    depot = None
     adjacencyMatrix.clear()
     _distanceMatrix.clear()
     parsed = False
@@ -53,7 +56,7 @@ def reset_data():
 
 # parse the set file name
 def parse():
-    global nodes, customers, chargers, parsed, averageVelocity, fuelCapacity, loadCapacity, inverseFuellingRate, fuelConsumptionRate
+    global nodes, customers, chargers, parsed, averageVelocity, fuelCapacity, loadCapacity, inverseFuellingRate, fuelConsumptionRate, depot
     if not filename: raise Exception('you are trying to parse before setting the filename!')
     reset_data()
 
@@ -62,9 +65,11 @@ def parse():
             if line.startswith("StingID"): continue  # skip first line or empty line
             tokens = line.split()
             if len(tokens) == 0: continue
-            if tokens[1] == 'f' or tokens[1] == 'c':
+            if tokens[1] == 'f' or tokens[1] == 'c' or tokens[1] == 'd':
                 node = None
                 if tokens[1] == 'f':
+                    node = Charger()
+                elif tokens[1] == 'd':
                     node = Charger()
                 else:
                     node = Customer()
@@ -72,16 +77,18 @@ def parse():
                     Convert node entries to floats and ints here.
                 """
                 node.id = tokens[0]
-                node.x = tokens[2]
-                node.y = tokens[3]
-                node.demand = tokens[4]
-                node.windowStart = tokens[5]
-                node.windowEnd = tokens[6]
-                node.serviceTime = tokens[7]
+                node.x = float(tokens[2])
+                node.y = float(tokens[3])
+                node.demand = float(tokens[4])
+                node.windowStart = float(tokens[5])
+                node.windowEnd = float(tokens[6])
+                node.serviceTime = float(tokens[7])
 
                 nodes[node.id] = node  # add a new node
                 if tokens[1] == 'f':
                     chargers[node.id] = node
+                elif tokens[1] == 'd':
+                    depot = node
                 else:
                     customers[node.id] = node
 
@@ -99,6 +106,8 @@ Also is a dict more efficient than 2-dim numpy array or Python list of lists?
 A dict seems less intuitive and more restrictive due to its unordered nature.
 """
 def getValDistanceMatrix(node1, node2):
+    if node1.id == node2.id:
+        return 0
     return _distanceMatrix[(min(node1.id, node2.id),max(node1.id,node2.id))]
 
 

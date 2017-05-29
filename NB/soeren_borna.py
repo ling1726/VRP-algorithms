@@ -18,13 +18,18 @@ def preprocessing():
             if node1Key == node2Key:
                 continue
             node2 = nodes[node2Key]
-
-            if (node1.demand + node2.demand > loadCapacity) or \
-                    (node1.windowStart + node1.serviceTime + getValDistanceMatrix(node1, node2) / averageVelocity >
-                         node2.windowEnd) or \
-                    (node1.windowStart + node1.serviceTime + getValDistanceMatrix(node1, node2) / averageVelocity +
-                         node2.serviceTime + getValDistanceMatrix(node2, nodes["S0"]) / averageVelocity >
-                         nodes["S0"].windowEnd):
+            if (node1.demand + node2.demand > instance.loadCapacity):
+                logger.debug("discarded because of too high demand: %f for maximum %f" % (node1.demand + node2.demand, instance.loadCapacity))
+                forbiddenArcs.add((node1.id, node2.id))
+                continue
+            if (node1.windowStart + node1.serviceTime + (getValDistanceMatrix(node1, node2) / instance.averageVelocity) > node2.windowEnd):
+                logger.debug("discarded because after serving %s, at earliest time + servicetime + traveltime exceeds latest servicetime of %s" % (node1, node2))
+                forbiddenArcs.add((node1.id, node2.id))
+                continue
+            if (node1.windowStart + node1.serviceTime + (getValDistanceMatrix(node1, node2) / instance.averageVelocity) +
+                         node2.serviceTime + (getValDistanceMatrix(node2, instance.depot) / instance.averageVelocity) >
+                         instance.depot.windowEnd):
+                logger.debug("discarded because after serving  %s, %s can't be served in time to make it back to the depot" %(node1, node2))
                 forbiddenArcs.add((node1.id, node2.id))
                 continue
 
@@ -38,16 +43,19 @@ def preprocessing():
                     break
                 charge1 = chargers[charge1Key]
                 for charge2Key in chargers:
+                    ''' There might be a situation where returning to the same charger makes an arc viable, so i commented this out
                     if charge1Key == charge2Key:
                         continue
+                    '''
                     charge2 = chargers[charge2Key]
-                    if (fuelConsumptionRate * (getValDistanceMatrix(charge1, node1) +
+                    if (instance.fuelConsumptionRate * (getValDistanceMatrix(charge1, node1) +
                                                    getValDistanceMatrix(node1, node2) +
-                                                   getValDistanceMatrix(node2, charge2)) <= fuelCapacity):
+                                                   getValDistanceMatrix(node2, charge2)) <= instance.fuelCapacity):
                         allowedArc = True
                         break
 
             if not allowedArc:
+                logger.debug("discarded because there is no drivable route from any charger to %s, %s and back to any charger, without going over the fuel capacity" % (node1, node2))
                 forbiddenArcs.add((node1.id, node2.id))
 
     return forbiddenArcs
@@ -67,15 +75,13 @@ def _create_initial_routes():
     return routes
 
 
-def _calculate_savings(routes):
+def _calculate_savings(routes, blacklist):
     #savings are kept as list of tuples (first_node, second_node, savings_value) to be more easily sorted
     savings = []
     for route1 in routes:
         for route2 in routes:
-            """This test should be commented in if the preprocessing is finished
-            if (node1.id, node2.id) in forbiddenArcs:
-                continue
-            """
+            #if (node1.id, node2.id) in blacklist:
+                #continue
             a = instance.getValDistanceMatrix(route1.end, nodes.get('S0'))
             b = instance.getValDistanceMatrix(nodes.get('S0'), route2.start)
             c = instance.getValDistanceMatrix(route1.end, route2.start)
@@ -118,14 +124,14 @@ def _combine_routes(route1, route2):
     pass
 
 
-def solving():
+def solving(blacklist):
     # Here we will use savings criteria (paralell) for now. This might be switched afterwards
     routes = _create_initial_routes()
-    savings = _calculate_savings(routes)
+    savings = _calculate_savings(routes, blacklist)
     for sav in savings:
         route1, route2 = _get_routes(sav, routes)
-        feasability = _check_combination(route1, route2)
-        if feasability:
+        feasibility = _check_combination(route1, route2)
+        if feasibility:
             routes.remove(route1)
             routes.remove(route2)
             routes.append(_combine_routes(route1, route2))
@@ -147,8 +153,8 @@ path_soeren = "c103_21.txt"
 
 def startProgram(args):
     datareading(args.instance)
-    #preprocessing()
-    solving()
+    blacklist = preprocessing()
+    solving(blacklist)
     pass
 
 
