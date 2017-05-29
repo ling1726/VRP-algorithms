@@ -1,11 +1,8 @@
 import argparse
-import logging
-import operator
 
-import NB.instance as instance
-
-from NB.route import Route
-from NB.instance import *
+import NB.instance.instance as instance
+from NB.Solution.route import Route
+from NB.instance.instance import *
 
 
 # Schneider: The Electric Vehicle-Routing Problem with Time
