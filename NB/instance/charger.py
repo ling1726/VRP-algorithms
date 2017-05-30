@@ -3,5 +3,8 @@ from NB.instance.node import Node
 
 # Charger class with charger specific logic
 class Charger(Node):
+
+    __metaclass__ = Node
+
     def __init__(self):
         Node.__init__(self)

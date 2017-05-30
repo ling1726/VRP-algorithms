@@ -37,3 +37,6 @@ class Route(object):
 
     def get_nodes(self):
         return self.nodes[:]
+
+    def __str__(self):
+        return str([str(i) for i in self.nodes])
