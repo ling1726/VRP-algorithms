@@ -18,12 +18,9 @@ class Route(object):
         self.insert(customer)
         return True
 
-    """
-    Route start time is set to earliest possible. TODO: Implement forward time slack to adjust start times
-    """
     def timeFeasible(self, customer):
         if len(self.nodes) == 1: 
-            self.time = min(customer.windowStart, customer.windowStart - inst._distanceMatrix[(self.nodes[-1].id, customer.id)]/inst.averageVelocity)
+            self.time = max(0, customer.windowStart - inst._distanceMatrix[(self.nodes[-1].id, customer.id)]/inst.averageVelocity) 
         arrivalTime = self.time + inst._distanceMatrix[(self.nodes[-1].id, customer.id)]/inst.averageVelocity
         return customer.windowStart <= arrivalTime and arrivalTime <= customer.windowEnd
 
