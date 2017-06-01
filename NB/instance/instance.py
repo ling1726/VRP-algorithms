@@ -98,14 +98,17 @@ def parse():
 
     parsed = True  # set parsed status as true
     fillDistanceMatrix()
-"""
-The min/max is there to avoid redundant information due to the arc symmetry?
-Also is a dict more efficient than 2-dim numpy array or Python list of lists?
-A dict seems less intuitive and more restrictive due to its unordered nature.
-"""
+
 def getValDistanceMatrix(node1, node2):
-    short_id_1 = node1.id[:2]
-    short_id_2 = node2.id[:2]
+
+    short_id_1 = node1.id
+    short_id_2 = node2.id
+
+    if node1.id.find("_") != -1:
+        short_id_1,tmp,tmp = node1.id.partition("_")
+    if node2.id.find("_") != -1:
+        short_id_2,tmp,tmp = node2.id.partition("_")
+
     if short_id_1 == short_id_2:
         return 0
     return _distanceMatrix[(min(short_id_1, short_id_2),max(short_id_1,short_id_2))]
