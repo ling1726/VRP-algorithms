@@ -156,6 +156,12 @@ def _find_nearest_charger(node):
     return min_charger
 
 
+# only a method stub
+#TODO: Implement
+def add_charger(test_route, param):
+    return test_route
+
+
 def _check_combination(route1, route2):
     # Here we need to check if this solution is feasable
     # For now we just the newly created route and calculate the consumption, capacity etc...
@@ -166,7 +172,32 @@ def _check_combination(route1, route2):
     current_capacity = test_route[0].demand
     current_time = max(instance.averageVelocity * instance.getValDistanceMatrix(instance.depot, test_route[0]), test_route[0].windowStart)
 
-    #TODO: CONSUMPTIONCHECK AND ADDING OF CHARGERS WHERE NEEDED
+    # for initial testing of capacity, we add the depots
+    test_route.insert(0, instance.depot)
+    test_route.append(instance.depot)
+    i = 0
+    current_fuel = instance.fuelCapacity
+    while i < len(test_route) - 1:
+        if type(test_route[i]) is Charger:
+            # record the time we need to spend at this charger
+            test_route[i].load_time = (instance.fuelCapacity - current_fuel) * instance.inverseFuellingRate
+            current_fuel = instance.fuelCapacity
+        next_fuel = current_fuel - instance.getValDistanceMatrix(test_route[i], test_route[i+1]) * instance.fuelConsumptionRate
+        if next_fuel < 0:
+            test_route = add_charger(test_route, i+1)
+            # Use implicit falseness off empty list
+            if not test_route:
+                logger.debug("Rejected combination of %s and %s, because theres no good way to insert a charger after %s" % (route1, route2, test_route[i]))
+                return []
+            i = 0
+            current_fuel = fuelCapacity
+        else:
+            i += 1
+
+    # After this check we remove depots again
+    #TODO: CHECK IF THIS MIGHT BE BETTER LEFT IN
+    del test_route[0]
+    del test_route[-1]
 
     for i in range(len(test_route)-1):
 
@@ -205,6 +236,7 @@ def _check_combination(route1, route2):
         input()'''
 
     #TODO: Check feasibility of return to depot (Capacity, and Time Windows)
+    # This might be easier if we just leave the depots in the route for Time-Window and capacity check
 
     return test_route
 

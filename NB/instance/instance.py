@@ -65,12 +65,12 @@ def parse():
             if line.startswith("StingID"): continue  # skip first line or empty line
             tokens = line.split()
             if len(tokens) == 0: continue
-            if tokens[1] == 'f' or tokens[1] == 'c' or tokens[1] == 'd':
+            if tokens[1] == 'f' or tokens[1] == 'c':
                 node = None
                 if tokens[1] == 'f':
                     node = Charger()
-                elif tokens[1] == 'd':
-                    node = Charger()
+                    if tokens[0] == 'S0':
+                        depot = node
                 else:
                     node = Customer()
                 """
@@ -87,8 +87,6 @@ def parse():
                 nodes[node.id] = node  # add a new node
                 if tokens[1] == 'f':
                     chargers[node.id] = node
-                elif tokens[1] == 'd':
-                    depot = node
                 else:
                     customers[node.id] = node
 

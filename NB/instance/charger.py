@@ -6,5 +6,7 @@ class Charger(Node):
 
     __metaclass__ = Node
 
+    load_time = 0
+
     def __init__(self):
         Node.__init__(self)
