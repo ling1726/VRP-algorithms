@@ -1,6 +1,8 @@
 import argparse
 from operator import itemgetter
 
+import copy
+
 import NB.instance.instance as instance
 from NB import util
 from NB.Solution.route import Route
@@ -83,16 +85,18 @@ def _create_initial_routes():
             next_charger = _find_nearest_charger(node)
             if _get_route_consumption([next_charger, node]) > instance.fuelCapacity:
                 logger.error("Customer %s not reachable in this fashion" % (node))
-            else:
-                # if we find a suitable charger we need to delete it from the list of available chargers
 
-                # because every charger can be used only once
-                chargers.remove(next_charger)
+            # if we find a suitable charger we need to delete it from the list of available chargers
+            # because every charger can be used only once
+            insert_charger = copy.deepcopy(next_charger)
+            insert_charger.id = next_charger.id + "u"
+            print(next_charger)
+            print(insert_charger)
 
-                # we need to set the time needed to charge
-                fuel_used = instance.getValDistanceMatrix(instance.depot, next_charger) * instance.fuelConsumptionRate
-                next_charger.load_time = (instance.fuelCapacity - fuel_used) * instance.inverseFuellingRate
-                route = Route([next_charger, node])
+            # we need to set the time needed to charge
+            fuel_used = instance.getValDistanceMatrix(instance.depot, insert_charger) * instance.fuelConsumptionRate
+            insert_charger.load_time = (instance.fuelCapacity - fuel_used) * instance.inverseFuellingRate
+            route = Route([insert_charger, node])
         else:
             route = Route([node])
         routes.append(route)
@@ -100,20 +104,22 @@ def _create_initial_routes():
 
 # this assumes that every visit to any charger charges the vehicle fully and returns the maximum consumption of any part of this route between to chargers
 def _get_route_consumption(nodes):
-    part_route = [instance.depot]
+    last_charger = instance.depot
     max_length = 0
+    part_route = []
     for node in nodes:
-        part_route.append(node)
         if type(node) is Charger:
-            part_length = util.calculate_plain_route_cost(part_route)
+            part_length = util.calculate_route_cost(part_route, start=last_charger, end=node)
             if part_length > max_length:
                 max_length = part_length
             part_route = []
-    part_route.append(instance.depot)
-    part_length = util.calculate_route_cost(part_route)
+            last_charger = node
+        else:
+            part_route.append(node)
+    part_length = util.calculate_route_cost(part_route, start=last_charger, end=instance.depot)
     if part_length > max_length:
         max_length = part_length
-    return max_length * instance.averageVelocity
+    return max_length * instance.fuelConsumptionRate
 
 
 def _calculate_savings(routes, blacklist):
@@ -271,7 +277,7 @@ def solving(blacklist):
 
 def startProgram(args):
     datareading(args.instance)
-    blacklist = preprocessing()
+    blacklist = []#preprocessing()
     solution = solving(blacklist)
 
     # print solution to debug.txt
