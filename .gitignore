@@ -87,3 +87,5 @@ ENV/
 
 # Pycharm specific stuff
 .idea/workspace.xml
+.idea/misc.xml
+.idea/VRP.iml
