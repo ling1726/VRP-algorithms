@@ -43,6 +43,7 @@ def preprocessing():
                 continue
 
             allowedArc = False
+            # TODO: Check if we need to use instance.chargers
             for charge1Key in chargers:
                 if allowedArc:
                     break
@@ -80,15 +81,24 @@ def _create_initial_routes():
             continue
         if _get_route_consumption([node]) > instance.fuelCapacity:
             next_charger = _find_nearest_charger(node)
-            if _get_route_consumption([node, next_charger]) > instance.fuelCapacity:
+            if _get_route_consumption([next_charger, node]) > instance.fuelCapacity:
                 logger.error("Customer %s not reachable in this fashion" % (node))
-            route = Route([next_charger, node])
+            else:
+                # if we find a suitable charger we need to delete it from the list of available chargers
+
+                # because every charger can be used only once
+                chargers.remove(next_charger)
+
+                # we need to set the time needed to charge
+                fuel_used = instance.getValDistanceMatrix(instance.depot, next_charger) * instance.fuelConsumptionRate
+                next_charger.load_time = (instance.fuelCapacity - fuel_used) * instance.inverseFuellingRate
+                route = Route([next_charger, node])
         else:
             route = Route([node])
         routes.append(route)
     return routes
 
-# this assumes that every visit to any charger charges the vehicle fully
+# this assumes that every visit to any charger charges the vehicle fully and returns the maximum consumption of any part of this route between to chargers
 def _get_route_consumption(nodes):
     part_route = [instance.depot]
     max_length = 0
@@ -157,7 +167,7 @@ def _find_nearest_charger(node):
 
 
 # only a method stub
-#TODO: Implement
+#TODO: Implement, also i just realised that everytime we actually insert a charger into a route we have to delete it from the list of chargers
 def add_charger(test_route, param):
     return test_route
 
@@ -168,13 +178,11 @@ def _check_combination(route1, route2):
     # There might be a better way to do this
     test_route = route1.get_nodes() + route2.get_nodes()
 
-    current_consumption = util.calculate_route_cost([test_route[0]]) * instance.averageVelocity
-    current_capacity = test_route[0].demand
-    current_time = max(instance.averageVelocity * instance.getValDistanceMatrix(instance.depot, test_route[0]), test_route[0].windowStart)
-
-    # for initial testing of capacity, we add the depots
+    # for testing, we add the depots
     test_route.insert(0, instance.depot)
     test_route.append(instance.depot)
+
+    # fuel consumption test, INCLUDING Insertion of Chargers where necessary (If possible)
     i = 0
     current_fuel = instance.fuelCapacity
     while i < len(test_route) - 1:
@@ -194,14 +202,18 @@ def _check_combination(route1, route2):
         else:
             i += 1
 
-    # After this check we remove depots again
-    #TODO: CHECK IF THIS MIGHT BE BETTER LEFT IN
-    del test_route[0]
-    del test_route[-1]
+
+    current_capacity = 0
+    current_time = 0
 
     for i in range(len(test_route)-1):
 
         # Check Time Windows
+
+        # add time used to charge if the current node is a charger
+        if type(test_route[i]) is Charger:
+            current_time += test_route[i].load_time
+
         next_time = current_time + test_route[i].serviceTime + instance.averageVelocity * instance.getValDistanceMatrix(test_route[i], test_route[i+1])
         if next_time > test_route[i+1].windowEnd:
             logger.debug("Rejected combination of %s and %s, because we exceeded time window at %s" % (route1, route2, test_route[i+1]))
@@ -235,9 +247,9 @@ def _check_combination(route1, route2):
         print("currentCapacity: %d\nDemand of next Node: %d\nnextCapacity: %d" % (current_capacity, test_route[i+1].demand, next_capacity))
         input()'''
 
-    #TODO: Check feasibility of return to depot (Capacity, and Time Windows)
-    # This might be easier if we just leave the depots in the route for Time-Window and capacity check
-
+    # After this check we remove depots again because we work with savings
+    del test_route[0]
+    del test_route[-1]
     return test_route
 
 def solving(blacklist):
