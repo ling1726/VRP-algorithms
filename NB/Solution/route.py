@@ -7,7 +7,7 @@ from NB import util
 class Route(object):
     def __init__(self, init_nodes=[]):
 
-        self.nodes = init_nodes
+        self.nodes = init_nodes[:]
         if len(init_nodes) > 0:
             self.start = init_nodes[0]
             self.end = init_nodes[-1]

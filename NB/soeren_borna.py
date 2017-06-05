@@ -1,5 +1,8 @@
 import argparse
+import os
 from operator import itemgetter
+
+import subprocess
 
 import NB.instance.instance as instance
 from NB import util
@@ -142,7 +145,7 @@ def _calculate_savings(routes, blacklist):
             new_savings_value = a + b - c
             savings.append((route1.end, route2.start, new_savings_value))
 
-    logger.info("savings calculated")
+    logger.info("Savings calculated")
     return [sav for sav in savings if sav[2] > 0]
 
 
@@ -194,7 +197,7 @@ def add_charger(test_route, charger_index):
         feasible_insertion = instance.fuelCapacity >= _get_route_consumption(tmp_route[:charger_index + 2]) * instance.fuelConsumptionRate
         if feasible_insertion:
             break
-        del tmp_route[i]
+        del tmp_route[i+1]
 
     # if feasible insertion is not found or it is depot or it is charger right before the depot
     if not feasible_insertion or charger_org == instance.depot or type(tmp_route[-2]) is Charger :
@@ -225,10 +228,10 @@ def _check_combination(route1, route2):
         if next_fuel < 0:
             test_route = add_charger(test_route, i + 1)
             # Use implicit falseness off empty list
-            if not test_route:
+            if not test_route or len(test_route) > 100:
                 logger.debug(
-                    "Rejected combination of %s and %s, because theres no good way to insert a charger after %s" % (
-                        route1, route2, test_route[i]))
+                    "Rejected combination of %s and %s, because theres no good way to insert a charger" % (
+                        route1, route2))
                 return []
             i = 0
             current_fuel = fuelCapacity
@@ -300,29 +303,40 @@ def solving(blacklist):
         if route1 is None or route2 is None or route1 == route2:
             continue
         new_route = _check_combination(route1, route2)
-        if new_route != []:
+        if new_route:
             routes.remove(route1)
             routes.remove(route2)
-            new_route = Route(route1.get_nodes() + route2.get_nodes())
-            routes.append(new_route)
+            new_route_object = Route(new_route)
+            routes.append(new_route_object)
+    logger.info("Final routes calculated")
     return routes
 
 
 def startProgram(args):
     datareading(args.instance)
-    blacklist = []  # preprocessing()
+    blacklist = preprocessing()
     solution = solving(blacklist)
 
-    # print solution to debug.txt
-    file = open("debug.txt", "w")
-    for r in solution:
-        file.write("%s" % len(r.get_nodes()))
-        file.write("\n")
-    file.close()
+    if args.verify:
+        tempFile = instance.filename + '.sol'
+        f = open(tempFile, mode='w')
+        f.write('1028.969\n')
+        for r in solution:
+            sol_line = "D0, "
+            for c in r.get_nodes():
+                sol_line += str(c).split("_")[0]
+                sol_line += ", "
+            sol_line += "D0\n"
+            f.write(sol_line)
+        f.close()
 
+        subprocess.call(['java', '-jar', '../data/verifier/EVRPTWVerifier.jar', '-d', instance.filename, tempFile])
+
+        os.remove(tempFile)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Runs simple Sequential Heuristic on instance file')
     parser.add_argument('--instance', '-i', metavar='INSTANCE_FILE', required=True, help='The instance file')
+    parser.add_argument('--verify', '-v', action = 'store_true', help='Uses the EVRPTWVerifier to verify the solution')
     args = parser.parse_args()
     startProgram(args)
