@@ -87,6 +87,9 @@ def parse():
 
                 nodes[node.id] = node  # add a new node
                 if tokens[1] == 'f':
+                    node.demand = 0
+                    node.windowStart = 0
+                    node.windowEnd = 1000000000
                     chargers[node.id] = node
                 elif tokens[1] == 'd':
                     depot = node
