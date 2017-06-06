@@ -11,11 +11,13 @@ class Route(object):
         self.distance = 0.
 
     def feasibleInsertion(self, customer):
-        if not self.feasible(customer):
+        self.insertClosestFeasibleCharger(customer)
+        if not self.feasible(customer): return False
             # find closest feasible charger
-            success = self.insertClosestFeasibleCharger(customer)
-            if not success: return False
+            #success = self.insertClosestFeasibleCharger(customer)
+            #if not success: return False
         self.insert(customer)
+        self.insertClosestFeasibleCharger(self.depot)
         return True
 
     def feasible(self, node):
@@ -37,6 +39,7 @@ class Route(object):
     def insertClosestFeasibleCharger(self, customer):
         success = False
         for charger in inst.chargers.values():
+            if self.nodes[-1].id == charger.id: continue
             if not self.feasible(charger): continue
             currentBattery = self.battery
             currentDistance = self.distance
