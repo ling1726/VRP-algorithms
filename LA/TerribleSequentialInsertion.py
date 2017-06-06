@@ -32,16 +32,16 @@ class Solution(object):
     def createRoute(self):
         route = Route(self.depot)
         for customer in self.customers:
-            print (customer.id,customer.x, customer.y, inst._distanceMatrix[(customer.id, self.depot.id)])
-            if route.feasibleInsertion(customer): print('inserted', customer.id)
+            #print (customer.id,customer.x, customer.y, inst._distanceMatrix[(customer.id, self.depot.id)])
+            if route.feasibleInsertion(customer): pass#print('inserted', customer.id)
         route.feasibleInsertion(self.depot) #Route must end at the depot
         self.cost += route.getCost()
-        print(self.cost)
+        #print(self.cost)
         return route        
         
     def solve(self):
         while(len(self.customers)>0):
-            print(len(self.customers))
+            #print(len(self.customers))
             route = self.createRoute()
             newCustomerList = []
             # create a new list without chosen customers
@@ -59,22 +59,31 @@ class Solution(object):
         return '#solution for %s\n%.3f\n%s' % (inst.filename, self.cost, routeStr)
 
         
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Runs simple Sequential Heuristic on instance file')
     parser.add_argument('--instance', '-i', metavar='INSTANCE_FILE', required=True, help='The instance file')
     parser.add_argument('--verify', '-v', action = 'store_true', help='Uses the EVRPTWVerifier to verify the solution')
-    args = parser.parse_args()
-    inst.setFileName(args.instance)
-    inst.parse()
-    sol = Solution()
-    sol.sortCustomersByAngle()
-    sol.solve()
-    print(sol)
+    parser.add_argument('--all', '-a', action = 'store_true', help='Runs the algorithms on all instances')
 
-    if args.verify:
-        tempFile = inst.filename + '.sol'
-        with open(tempFile, mode='w') as f:
-            f.write(str(sol))
-        subprocess.call(['java', '-jar', '../data/verifier/EVRPTWVerifier.jar', inst.filename, tempFile])
-        os.remove(tempFile)
+    args = parser.parse_args()
+    instanceFiles = [args.instance]
+    if args.all:
+        instanceFiles = os.listdir('../data/instances/')
+        
+
+    for instanceFile in instanceFiles:
+        if not instanceFile.endswith('.txt'): continue
+        inst.setFileName(instanceFile)
+        inst.parse()
+        sol = Solution()
+        sol.sortCustomersByAngle()
+        sol.solve()
+        #if not args.verify: print(sol)
+
+        if args.verify:
+            tempFile = inst.filename + '.sol'
+            with open(tempFile, mode='w') as f:
+                f.write(str(sol))
+            subprocess.call(['java', '-jar', '../data/verifier/EVRPTWVerifier.jar', '-d', inst.filename, tempFile])
+            os.remove(tempFile)
+        inst.reset_data()
