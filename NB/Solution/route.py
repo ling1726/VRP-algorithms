@@ -1,5 +1,5 @@
 # Object representation of a route
-import NB.instance as instance
+import NB.instance.instance as instance
 import math
 from NB import util
 
@@ -21,7 +21,7 @@ class Route(object):
         self.end = self.nodes[-1]
 
     def calc_cost(self):
-        return util.calculate_route_cost(self.nodes)
+        return util.calculate_route_cost(self.nodes,instance.depot, instance.depot)
 
     def add_node_at_best(self, new_node):
         # Tupel saving the index of the minimum cost of inserting a customer at that index AND the minimum cost
