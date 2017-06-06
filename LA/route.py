@@ -22,7 +22,7 @@ class Route(object):
             #success = self.insertClosestFeasibleCharger(customer)
             #if not success: return False
         self.insert(customer)
-        self.insertClosestFeasibleCharger(self.depot)
+        if customer.id != self.depot.id: self.insertClosestFeasibleCharger(self.depot)
         return True
 
     def feasible(self, node):
