@@ -220,7 +220,10 @@ def add_charger(test_route, charger_index, use_heurisitic):
         #heurisic insertion
          edge = _most_consuming_edge(tmp_route[:charger_index])
          nearest_charger = _nearest_charger(tmp_route[edge[0]], tmp_route[edge[1]]).generate_clone()
+         #nearest_charger = _find_nearest_charger(tmp_route[edge[0]])
          tmp_route.insert(edge[1],nearest_charger)
+    elif not feasible_insertion and tmp_route == test_route:
+        tmp_route = []
 
     return tmp_route
 
@@ -279,6 +282,7 @@ def _make_fuel_consumption_feasible(route1, route2, use_heuristic=False):
             i += 1
 
     return test_route
+
 def _check_combination(route1, route2):
     # Here we need to check if this solution is feasible
     # For now we just the newly created route and calculate the consumption, capacity etc...
@@ -338,11 +342,24 @@ def _check_combination(route1, route2):
         del test_route[-1]
     return test_route
 
+def _delete_only_charger_routes(routes):
+    tmp_routes = routes[:]
+    for route in routes:
+        have_customer = False
+        for node in route.get_nodes():
+            if type(node) is Customer:
+                have_customer = True
+                break
+        if not have_customer:
+            tmp_routes.remove(route)
+    return tmp_routes
 
 def solving(blacklist):
     # Here we will use savings criteria (paralell) for now. This might be switched afterwards
     routes = _create_initial_routes()
     savings = _calculate_savings(routes, blacklist)
+    routes = _delete_only_charger_routes(routes)
+
     savings.sort(key=itemgetter(2), reverse=True)
     for sav in savings:
         route1, route2 = _get_routes(sav, routes)
