@@ -388,6 +388,20 @@ def solving(blacklist):
     logger.info("Final routes calculated")
 
     for r in routes:
+        # TODO: check if route violates time windows!!
+        nodes = r.get_nodes()
+        if len(nodes) == 2 and type(nodes[0]) is Customer and type(nodes[1]) is Charger:
+            start_time = max(instance.getValDistanceMatrix(instance.depot, nodes[0])*instance.averageVelocity, nodes[0].windowStart)
+            a = instance.getValDistanceMatrix(nodes[0], nodes[1]) * instance.averageVelocity
+            b = instance.getValDistanceMatrix(nodes[1], instance.depot) * instance.averageVelocity
+            endtime = start_time + nodes[0].serviceTime + a + b + nodes[1].load_time
+            if endtime > instance.depot.windowEnd:
+                print(instance.filename)
+                rev = list(reversed(nodes))
+                r.nodes = rev
+
+
+    '''for r in routes:
         test_route= r.get_nodes()
         test_route.insert(0,instance.depot)
         test_route.append(instance.depot)
@@ -405,7 +419,7 @@ def solving(blacklist):
                 test_route.pop(0)
                 r.nodes=list(reversed(test_route))
                 break
-            current_time = max(next_time, test_route[j + 1].windowStart)
+            current_time = max(next_time, test_route[j + 1].windowStart)'''
     return routes
 
 import os
@@ -442,8 +456,6 @@ def startProgram(args):
     #     file_parse = "rc106_21.txt"
         if file_parse.startswith(".") or file_parse.endswith("sol"):
             continue
-        if file_parse != "c101_21.txt":
-            continue
         datareading(file_parse)
         blacklist = preprocessing()
         solution = solving(blacklist)
@@ -467,7 +479,8 @@ def startProgram(args):
                 f.write(sol_line)
             f.close()
 
-            subprocess.call(['java', '-jar', '../data/verifier/EVRPTWVerifier.jar', '-d', instance.filename, tempFile])
+            p2 = subprocess.check_output(['java', '-jar', '../data/verifier/EVRPTWVerifier.jar', '-d', instance.filename, tempFile])
+            print(p2)
             #os.remove(tempFile)
 
 if __name__ == '__main__':
