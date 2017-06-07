@@ -22,8 +22,8 @@ class Charger(Node):
         short_id_1 = self.id
         short_id_2 = other_charger.id
 
-        if self.id.find("_") != -1:
-            short_id_1,tmp,tmp = other_charger.id.partition("_")
-        if self.id.find("_") != -1:
-            short_id_2,tmp,tmp = other_charger.id.partition("_")
+        if short_id_1.find("_") != -1:
+            short_id_1,tmp,tmp = short_id_1.partition("_")
+        if short_id_2.find("_") != -1:
+            short_id_2,tmp,tmp = short_id_2.partition("_")
         return short_id_1 == short_id_2

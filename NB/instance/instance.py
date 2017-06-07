@@ -62,7 +62,7 @@ def parse():
 
     with open(filename, 'r') as infile:
         for line in infile:
-            if line.startswith("StingID"): continue  # skip first line or empty line
+            if line.startswith("StringID"): continue  # skip first line or empty line
             tokens = line.split()
             if len(tokens) == 0: continue
             if tokens[1] == 'f' or tokens[1] == 'c':

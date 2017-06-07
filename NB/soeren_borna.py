@@ -11,7 +11,7 @@ from NB.Solution.route import Route
 from NB.instance.instance import *
 
 # Logger
-logging.basicConfig(level=logging.INFO)
+#logging.basicConfig(level=logging.ERROR)
 logger = logging.getLogger(__name__)
 
 
@@ -93,10 +93,11 @@ def datareading(path):
 def _create_initial_routes():
     routes = []
     for node in nodes.values():
+        '''
         # if type(node) is Charger:
         #     continue
         if _get_route_consumption([node]) > instance.fuelCapacity:
-            next_charger = _find_nearest_charger(node)
+            next_charger = _find_nearest_charger(node).generate_clone()
             if _get_route_consumption([next_charger, node]) > instance.fuelCapacity:
                 logger.error("Customer %s not reachable in this fashion" % (node))
 
@@ -115,11 +116,21 @@ def _create_initial_routes():
                 new_route.pop()
                 new_route.pop(0)
             else:
-                new_route = [next_charger,node]
+                new_route = [node, next_charger]
             route = Route(new_route)
         else:
             route = Route([node])
+            
+        current_fuel = instance.fuelCapacity - instance.getValDistanceMatrix(instance.depot, route[0])
+        for i in range(len(route)-1):'''
+        new_route = _make_fuel_consumption_feasible(Route([node]), Route([]), True)
+        new_route.pop()
+        new_route.pop(0)
+        route = Route(new_route)
         routes.append(route)
+
+
+    #print(routes)
     return routes
 
 
@@ -204,6 +215,8 @@ def add_charger(test_route, charger_index, use_heurisitic):
             otherwise feasible route
     """
     tmp_route = test_route[:]
+    charger_org = None
+    feasible_insertion = False
     for i in reversed(range(1, charger_index)):
         charger_org = _find_nearest_charger(test_route[i])
         charger_temp = charger_org.generate_clone()
@@ -215,11 +228,11 @@ def add_charger(test_route, charger_index, use_heurisitic):
         del tmp_route[i+1]
 
     # if feasible insertion is not found or it is depot or it is charger right before the depot
-    if charger_org == instance.depot:# or type(tmp_route[-2]) is Charger :
+    if charger_org and charger_org.equal_to(instance.depot):# or type(tmp_route[-2]) is Charger :
          tmp_route = []
     elif not feasible_insertion and use_heurisitic:
         #heurisic insertion
-         edge = _most_consuming_edge(tmp_route[:charger_index])
+         edge = _most_consuming_edge(tmp_route[:charger_index + 1])
          nearest_charger = _nearest_charger(tmp_route[edge[0]], tmp_route[edge[1]]).generate_clone()
          #nearest_charger = _find_nearest_charger(tmp_route[edge[0]])
          tmp_route.insert(edge[1],nearest_charger)
@@ -262,7 +275,7 @@ def _make_fuel_consumption_feasible(route1, route2, use_heuristic=True):
     i = 0
     current_fuel = instance.fuelCapacity
     while i < len(test_route) - 1:
-        if type(test_route[i]) is Charger:
+        if type(test_route[i]) is Charger and not test_route[i].equal_to(instance.depot):
             # record the time we need to spend at this charger
             test_route[i].load_time = (instance.fuelCapacity - current_fuel) * instance.inverseFuellingRate
             current_fuel = instance.fuelCapacity
@@ -277,7 +290,7 @@ def _make_fuel_consumption_feasible(route1, route2, use_heuristic=True):
                         route1, route2))
                 return []
             i = 0
-            current_fuel = fuelCapacity
+            current_fuel = instance.fuelCapacity
         else:
             current_fuel = next_fuel
             i += 1
@@ -373,22 +386,40 @@ def solving(blacklist):
             new_route_object = Route(new_route)
             routes.append(new_route_object)
     logger.info("Final routes calculated")
+
+    for r in routes:
+        test_route= r.get_nodes()
+        test_route.insert(0,instance.depot)
+        test_route.append(instance.depot)
+        # TODO: check if route violates time windows!!
+        current_time=0
+        for j in range(len(test_route)-1):
+            if type(test_route[j]) is Charger:
+                current_time += test_route[j].load_time
+
+            next_time = current_time + test_route[j].serviceTime + instance.averageVelocity * instance.getValDistanceMatrix(
+                test_route[j], test_route[j + 1])
+            #exceeded time window
+            if next_time > test_route[j + 1].windowEnd:
+                test_route.pop()
+                test_route.pop(0)
+                r.nodes=list(reversed(test_route))
+                break
+            current_time = max(next_time, test_route[j + 1].windowStart)
     return routes
 
 import os
-
-
 def _visualize_solution(instance, solution):
     g1 = gv.Digraph(format='svg', engine="neato")
     color_step = int(16777215/len(solution)+1)
     color = 0
     for n in instance.nodes.values():
         if type(n) == Customer:
-            pos = str(n.x) + "," + str(n.y) + "!"
-            g1.node(n.id, shape="box", color="red", fixedsize="true", width=".2", height=".2", fontsize="9")
+            pos = str(n.x/10) + "," + str(n.y/10) + "!"
+            g1.node(n.id, shape="box", color="red", fixedsize="true", width=".2", height=".2", fontsize="9", pos=pos)
         else:
-            pos = str(n.x) + "," + str(n.y) + "!"
-            g1.node(n.id, color="blue", fixedsize="true", width=".2", height=".2", fontsize="9")
+            pos = str(n.x/10) + "," + str(n.y/10) + "!"
+            g1.node(n.id, color="blue", fixedsize="true", width=".2", height=".2", fontsize="9", pos=pos)
     for r in solution:
         ad_route = [instance.depot]
         ad_route.extend(r.get_nodes()[:])
@@ -409,9 +440,9 @@ def startProgram(args):
     for file_parse in os.listdir(fold):
     # for i in range(0,1):
     #     file_parse = "rc106_21.txt"
-        #if file_parse=="r102_21.txt":
-            #continue
         if file_parse.startswith(".") or file_parse.endswith("sol"):
+            continue
+        if file_parse != "c101_21.txt":
             continue
         datareading(file_parse)
         blacklist = preprocessing()
@@ -420,6 +451,9 @@ def startProgram(args):
         total_cost = 0
         for s in solution:
             total_cost+=s.calc_cost()
+        print(instance.filename)
+        print(total_cost)
+        print()
         if args.verify:
             tempFile = instance.filename + '.sol'
             f = open(tempFile, mode='w')

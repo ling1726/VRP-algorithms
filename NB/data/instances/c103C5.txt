@@ -1,0 +1,17 @@
+digraph {
+	S15 [color=blue fixedsize=true fontsize=9 height=.2 pos="3.9,2.6!" width=.2]
+	C20 [color=red fixedsize=true fontsize=9 height=.2 pos="3.0,5.0!" shape=box width=.2]
+	S0 [color=blue fixedsize=true fontsize=9 height=.2 pos="4.0,5.0!" width=.2]
+	C57 [color=red fixedsize=true fontsize=9 height=.2 pos="4.0,1.5!" shape=box width=.2]
+	C98 [color=red fixedsize=true fontsize=9 height=.2 pos="5.8,7.5!" shape=box width=.2]
+	C24 [color=red fixedsize=true fontsize=9 height=.2 pos="2.5,5.0!" shape=box width=.2]
+	C65 [color=red fixedsize=true fontsize=9 height=.2 pos="4.8,4.0!" shape=box width=.2]
+		S0 -> C98 [arrowsize=.2 color="#000000" penwidth=.7]
+		C98 -> S0 [arrowsize=.2 color="#000000" penwidth=.7]
+		S0 -> C65 [arrowsize=.2 color="#555556" penwidth=.7]
+		C65 -> C57 [arrowsize=.2 color="#555556" penwidth=.7]
+		C57 -> S0 [arrowsize=.2 color="#555556" penwidth=.7]
+		S0 -> C20 [arrowsize=.2 color="#aaaaac" penwidth=.7]
+		C20 -> C24 [arrowsize=.2 color="#aaaaac" penwidth=.7]
+		C24 -> S0 [arrowsize=.2 color="#aaaaac" penwidth=.7]
+}
