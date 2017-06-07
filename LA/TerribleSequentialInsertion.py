@@ -104,9 +104,9 @@ if __name__ == '__main__':
         #if not args.verify: print(sol)
 
         if args.verify:
-            tempFile = inst.filename + '.sol'
+            tempFile = './solutions/'+ instanceFile + '.sol'
             with open(tempFile, mode='w') as f:
                 f.write(str(sol))
             subprocess.call(['java', '-jar', '../data/verifier/EVRPTWVerifier.jar', '-d', inst.filename, tempFile])
-            os.remove(tempFile)
+            #os.remove(tempFile)
         inst.reset_data()

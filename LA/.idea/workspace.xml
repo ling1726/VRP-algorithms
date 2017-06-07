@@ -18,11 +18,11 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file leaf-file-name="TerribleSequentialInsertion.py" pinned="false" current-in-tab="false">
+      <file leaf-file-name="TerribleSequentialInsertion.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/TerribleSequentialInsertion.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="300">
-              <caret line="24" column="44" lean-forward="true" selection-start-line="22" selection-start-column="3" selection-end-line="24" selection-end-column="44" />
+            <state relative-caret-position="750">
+              <caret line="106" column="51" lean-forward="false" selection-start-line="106" selection-start-column="51" selection-end-line="106" selection-end-column="51" />
               <folding>
                 <element signature="e#0#10#0" expanded="true" />
               </folding>
@@ -30,11 +30,11 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="route.py" pinned="false" current-in-tab="true">
+      <file leaf-file-name="route.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/route.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="600">
-              <caret line="46" column="0" lean-forward="false" selection-start-line="46" selection-start-column="0" selection-end-line="46" selection-end-column="0" />
+            <state relative-caret-position="209">
+              <caret line="53" column="0" lean-forward="false" selection-start-line="53" selection-start-column="0" selection-end-line="53" selection-end-column="0" />
               <folding>
                 <element signature="e#0#32#0" expanded="true" />
               </folding>
@@ -70,8 +70,8 @@
   <component name="IdeDocumentHistory">
     <option name="CHANGED_PATHS">
       <list>
-        <option value="$PROJECT_DIR$/TerribleSequentialInsertion.py" />
         <option value="$PROJECT_DIR$/route.py" />
+        <option value="$PROJECT_DIR$/TerribleSequentialInsertion.py" />
       </list>
     </option>
   </component>
@@ -240,12 +240,12 @@
       <option name="presentableId" value="Default" />
       <updated>1496660887906</updated>
       <workItem from="1496660890021" duration="5337000" />
-      <workItem from="1496773216235" duration="5645000" />
+      <workItem from="1496773216235" duration="5739000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="10982000" />
+    <option name="totallyTimeSpent" value="11076000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="65" y="24" width="1855" height="1056" extended-state="6" />
@@ -334,22 +334,22 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/TerribleSequentialInsertion.py">
+    <entry file="file://$PROJECT_DIR$/route.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="300">
-          <caret line="24" column="44" lean-forward="true" selection-start-line="22" selection-start-column="3" selection-end-line="24" selection-end-column="44" />
+        <state relative-caret-position="209">
+          <caret line="53" column="0" lean-forward="false" selection-start-line="53" selection-start-column="0" selection-end-line="53" selection-end-column="0" />
           <folding>
-            <element signature="e#0#10#0" expanded="true" />
+            <element signature="e#0#32#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/route.py">
+    <entry file="file://$PROJECT_DIR$/TerribleSequentialInsertion.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="600">
-          <caret line="46" column="0" lean-forward="false" selection-start-line="46" selection-start-column="0" selection-end-line="46" selection-end-column="0" />
+        <state relative-caret-position="750">
+          <caret line="106" column="51" lean-forward="false" selection-start-line="106" selection-start-column="51" selection-end-line="106" selection-end-column="51" />
           <folding>
-            <element signature="e#0#32#0" expanded="true" />
+            <element signature="e#0#10#0" expanded="true" />
           </folding>
         </state>
       </provider>
