@@ -10,11 +10,13 @@ def depotReachable(route, node):
 def chargable(route, charger, node):
     res = route.battery - _b(node, charger)
     if route.last() != node: res -= _b(route.last(), node)
-    #print("CHARGABEL", 0<= res, node.id)
     return 0 <= res and _sufficientTimeForCharging(route, node)
 
 def cost(route):
     return sum(_d(route.nodes[i], route.nodes[i+1]) for i in range(len(route.nodes[1:])))
+
+def cost_n(nodes):
+    return sum(_d(nodes[i], nodes[i+1]) for i in range(len(nodes[1:])))
 
 def closestCharger(node):
     return min(inst.chargers.values(), key=lambda x: _b(node, x))
