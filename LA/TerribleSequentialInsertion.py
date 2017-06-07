@@ -6,8 +6,12 @@ import logging
 import math
 from route import Route
 import instance.instance as inst 
+import routehelper as rh
+import copy
 
-logging.basicConfig(level=logging.INFO)                                                                       
+import twhelper as tw
+
+logging.basicConfig(level=logging.ERROR)                                                                       
 logger = logging.getLogger(__name__) 
 
 class Solution(object):
@@ -23,7 +27,7 @@ class Solution(object):
     def translateByDepot(self, depot):
         for customer in self.customers:
             customer.translateByDepot(depot)
-
+        
     def sortCustomersByAngle(self):
         for customer in self.customers:
             customer.setAngleFromOrigin()
@@ -31,17 +35,35 @@ class Solution(object):
 
     def createRoute(self):
         route = Route(self.depot)
+        infeasibleCustomers = []
         for customer in self.customers:
-            #print (customer.id,customer.x, customer.y, inst._distanceMatrix[(customer.id, self.depot.id)])
-            if route.feasibleInsertion(customer): pass#print('inserted', customer.id)
-        route.feasibleInsertion(self.depot) #Route must end at the depot
+            if not route.feasibleInsertion(customer):
+                infeasibleCustomers.append(customer)
+        if len(route.nodes) > 1 and not rh.depotReachable(route, route.last()):
+            route.insertCharger(rh.closestCharger(route.last()))
+        
+            #for tryAgainCustomer in infeasibleCustomers:
+             #   chargerRoute.feasibleInsertion(tryAgainCustomer, False)
+            #if not rh.depotReachable(route, route.last()) or len(route.nodes) + 1 < len(chargerRoute.nodes):
+             #   route = chargerRoute
+        
+        if len(route.nodes) == 1: #Empty route
+            for c in infeasibleCustomers:
+                route.insertCharger(rh.closestChargerBetweenTwoNodes(inst.depot, c))
+                print("Inserted charger %s for customer %s" % (rh.closestChargerBetweenTwoNodes(inst.depot, c).id,customer.id))
+                if route.feasibleInsertion(c): 
+                    print("Inserted the bastard %s" % c.id) 
+                    if not rh.depotReachable(route, c):
+                        print("Can't reach depot tho")
+                    route.insertCharger(rh.closestChargerBetweenTwoNodes(inst.depot, c))
+                    break
+                else: print("Couldn't insert %s" % c.id)
+        route.insert(self.depot)
         self.cost += route.getCost()
-        #print(self.cost)
-        return route        
+        return route
         
     def solve(self):
         while(len(self.customers)>0):
-            #print(len(self.customers))
             route = self.createRoute()
             newCustomerList = []
             # create a new list without chosen customers
@@ -78,6 +100,7 @@ if __name__ == '__main__':
         sol = Solution()
         sol.sortCustomersByAngle()
         sol.solve()
+        print(sol.cost)
         #if not args.verify: print(sol)
 
         if args.verify:

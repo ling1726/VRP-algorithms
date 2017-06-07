@@ -1,5 +1,10 @@
 import instance.instance as inst
 import twhelper as tw
+import routehelper as rh
+import logging
+
+logging.basicConfig(level=logging.ERROR)                                                                                 
+logger = logging.getLogger(__name__) 
 
 class Route(object):
 
@@ -14,15 +19,12 @@ class Route(object):
     def translateByDepot(self, depot):
         for charger in self.chargers:
             charger.translateByDepot(depot)
-
-    def feasibleInsertion(self, customer):
-        self.insertClosestFeasibleCharger(customer)
+    
+    
+    def feasibleInsertion(self, customer, relaxedInsertion = True):
         if not self.feasible(customer): return False
-            # find closest feasible charger
-            #success = self.insertClosestFeasibleCharger(customer)
-            #if not success: return False
+        if not rh.depotReachable(self, customer) and not rh.chargable(self, rh.closestCharger(customer), customer): return False
         self.insert(customer)
-        if customer.id != self.depot.id: self.insertClosestFeasibleCharger(self.depot)
         return True
 
     def feasible(self, node):
@@ -32,7 +34,7 @@ class Route(object):
         return True
 
     def getCost(self):
-        return self.distance * inst.fuelConsumptionRate
+        return rh.cost(self)
 
     def insert(self, customer):
         self.distance += inst._distanceMatrix[(self.nodes[-1].id, customer.id)]
@@ -40,6 +42,12 @@ class Route(object):
         self.capacity = self.capacity - customer.demand
         self.nodes.append(customer)
 
+    def insertCharger(self, charger):
+        logger.info("Inserting %s charger" % charger.id)
+        if not self.feasible(charger): logger.error("Error inserting charger %s. Not feasible." % charger.id)
+        self.insert(charger)
+        self.battery = inst.fuelCapacity
+    """
     #Inserting first feasible charger not the closest one?
     def insertClosestFeasibleCharger(self, customer):
         success = False
@@ -66,7 +74,12 @@ class Route(object):
         self.distance += inst._distanceMatrix[(current.id, charger.id)] # add distance
         self.battery = inst.fuelCapacity # refill battery
         self.nodes.append(charger)
+    """
+    def last(self):
+        return self.nodes[-1]
 
+    def __str__(self):
+        return str([node.id for node in self.nodes])
     """
     #Currently not used
     def depotReachable(self, customer, remainingBattery):                       
