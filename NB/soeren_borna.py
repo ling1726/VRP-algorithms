@@ -3,6 +3,7 @@ import os
 from operator import itemgetter
 
 import subprocess
+import graphviz as gv
 
 import NB.instance.instance as instance
 from NB import util
@@ -375,18 +376,47 @@ def solving(blacklist):
     return routes
 
 import os
+
+
+def _visualize_solution(instance, solution):
+    g1 = gv.Digraph(format='svg', engine="neato")
+    color_step = int(16777215/len(solution)+1)
+    color = 0
+    for n in instance.nodes.values():
+        if type(n) == Customer:
+            pos = str(n.x) + "," + str(n.y) + "!"
+            g1.node(n.id, shape="box", color="red", fixedsize="true", width=".2", height=".2", fontsize="9")
+        else:
+            pos = str(n.x) + "," + str(n.y) + "!"
+            g1.node(n.id, color="blue", fixedsize="true", width=".2", height=".2", fontsize="9")
+    for r in solution:
+        ad_route = [instance.depot]
+        ad_route.extend(r.get_nodes()[:])
+        ad_route.append(instance.depot)
+        this_color = "#"+'{:06x}'.format(color)
+        for i in range(len(ad_route)-1):
+            a = ad_route[i].id.split("_")[0]
+            b = ad_route[i+1].id.split("_")[0]
+
+            g1.edge(a, b, penwidth=".7", arrowsize=".2", color=this_color)
+        color += color_step
+
+    filename = g1.render(filename='img/'+instance.filename)
+
+
 def startProgram(args):
     fold="../data/instances"
     for file_parse in os.listdir(fold):
     # for i in range(0,1):
     #     file_parse = "rc106_21.txt"
-        if file_parse=="r102_21.txt":
-            continue
+        #if file_parse=="r102_21.txt":
+            #continue
         if file_parse.startswith(".") or file_parse.endswith("sol"):
             continue
         datareading(file_parse)
         blacklist = preprocessing()
         solution = solving(blacklist)
+        _visualize_solution(instance, solution)
         total_cost = 0
         for s in solution:
             total_cost+=s.calc_cost()
