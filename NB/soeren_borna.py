@@ -130,7 +130,7 @@ def _create_initial_routes():
         routes.append(route)
 
 
-    print(routes)
+    #print(routes)
     return routes
 
 
@@ -215,6 +215,8 @@ def add_charger(test_route, charger_index, use_heurisitic):
             otherwise feasible route
     """
     tmp_route = test_route[:]
+    charger_org = None
+    feasible_insertion = False
     for i in reversed(range(1, charger_index)):
         charger_org = _find_nearest_charger(test_route[i])
         charger_temp = charger_org.generate_clone()
@@ -226,11 +228,11 @@ def add_charger(test_route, charger_index, use_heurisitic):
         del tmp_route[i+1]
 
     # if feasible insertion is not found or it is depot or it is charger right before the depot
-    if charger_org == instance.depot:# or type(tmp_route[-2]) is Charger :
+    if charger_org and charger_org.equal_to(instance.depot):# or type(tmp_route[-2]) is Charger :
          tmp_route = []
     elif not feasible_insertion and use_heurisitic:
         #heurisic insertion
-         edge = _most_consuming_edge(tmp_route[:charger_index])
+         edge = _most_consuming_edge(tmp_route[:charger_index + 1])
          nearest_charger = _nearest_charger(tmp_route[edge[0]], tmp_route[edge[1]]).generate_clone()
          #nearest_charger = _find_nearest_charger(tmp_route[edge[0]])
          tmp_route.insert(edge[1],nearest_charger)
@@ -273,7 +275,7 @@ def _make_fuel_consumption_feasible(route1, route2, use_heuristic=True):
     i = 0
     current_fuel = instance.fuelCapacity
     while i < len(test_route) - 1:
-        if type(test_route[i]) is Charger:
+        if type(test_route[i]) is Charger and not test_route[i].equal_to(instance.depot):
             # record the time we need to spend at this charger
             test_route[i].load_time = (instance.fuelCapacity - current_fuel) * instance.inverseFuellingRate
             current_fuel = instance.fuelCapacity
@@ -288,7 +290,7 @@ def _make_fuel_consumption_feasible(route1, route2, use_heuristic=True):
                         route1, route2))
                 return []
             i = 0
-            current_fuel = fuelCapacity
+            current_fuel = instance.fuelCapacity
         else:
             current_fuel = next_fuel
             i += 1
@@ -386,16 +388,27 @@ def solving(blacklist):
     logger.info("Final routes calculated")
 
     for r in routes:
+        test_route= r.get_nodes()
+        test_route.insert(0,instance.depot)
+        test_route.append(instance.depot)
         # TODO: check if route violates time windows!!
-        nodes = r.get_nodes()
-        if len(nodes) == 2 and type(nodes[0]) is Customer and type(nodes[1]) is Charger:
-                rev = list(reversed(nodes))
-                r.nodes = rev
+        current_time=0
+        for j in range(len(test_route)-1):
+            if type(test_route[j]) is Charger:
+                current_time += test_route[j].load_time
+
+            next_time = current_time + test_route[j].serviceTime + instance.averageVelocity * instance.getValDistanceMatrix(
+                test_route[j], test_route[j + 1])
+            #exceeded time window
+            if next_time > test_route[j + 1].windowEnd:
+                test_route.pop()
+                test_route.pop(0)
+                r.nodes=list(reversed(test_route))
+                break
+            current_time = max(next_time, test_route[j + 1].windowStart)
     return routes
 
 import os
-
-
 def _visualize_solution(instance, solution):
     g1 = gv.Digraph(format='svg', engine="neato")
     color_step = int(16777215/len(solution)+1)
@@ -429,7 +442,7 @@ def startProgram(args):
     #     file_parse = "rc106_21.txt"
         if file_parse.startswith(".") or file_parse.endswith("sol"):
             continue
-        if file_parse != "r105C5.txt" and file_parse != "rc101_21.txt" and file_parse != "rc103C15.txt" and file_parse != "rc103_21.txt":
+        if file_parse != "c101_21.txt":
             continue
         datareading(file_parse)
         blacklist = preprocessing()
