@@ -9,6 +9,7 @@ import instance.instance as inst
 import routehelper as rh
 import copy
 import graphviz as gv
+import statistics 
 
 import twhelper as tw
 
@@ -51,11 +52,8 @@ class Solution(object):
         if len(route.nodes) == 1: #Empty route
             for c in infeasibleCustomers:
                 route.insertCharger(rh.closestChargerBetweenTwoNodes(inst.depot, c))
-                print("Inserted charger %s for customer %s" % (rh.closestChargerBetweenTwoNodes(inst.depot, c).id,customer.id))
                 if route.feasibleInsertion(c): 
-                    print("Inserted the bastard %s" % c.id) 
-                    if not rh.depotReachable(route, c):
-                        print("Can't reach depot tho")
+                    if not rh.depotReachable(route, c): print("Can't reach depot")
                     route.insertCharger(rh.closestChargerBetweenTwoNodes(inst.depot, c))
                     break
                 else: print("Couldn't insert %s" % c.id)
@@ -115,13 +113,12 @@ if __name__ == '__main__':
     parser.add_argument('--instance', '-i', metavar='INSTANCE_FILE', required=True, help='The instance file')
     parser.add_argument('--verify', '-v', action = 'store_true', help='Uses the EVRPTWVerifier to verify the solution')
     parser.add_argument('--all', '-a', action = 'store_true', help='Runs the algorithms on all instances')
-
     args = parser.parse_args()
     instanceFiles = [args.instance]
     if args.all:
         instanceFiles = os.listdir('../data/instances/')
         
-
+    stats = []
     for instanceFile in instanceFiles:
         if not instanceFile.endswith('.txt'): continue
         inst.setFileName(instanceFile)
@@ -129,14 +126,16 @@ if __name__ == '__main__':
         sol = Solution()
         sol.sortCustomersByAngle()
         sol.solve()
-        _visualize_solution(sol)
+        #_visualize_solution(sol)
         print(sol.cost)
+        stats.append(sol.cost)
         #if not args.verify: print(sol)
 
         if args.verify:
             tempFile = './solutions/'+ instanceFile + '.sol'
             with open(tempFile, mode='w') as f:
                 f.write(str(sol))
-            subprocess.call(['java', '-jar', '../data/verifier/EVRPTWVerifier.jar', '-d', inst.filename, tempFile])
+            subprocess.call(['java', '-jar', '../data/verifier/EVRPTWVerifier.jar', inst.filename, tempFile])
             #os.remove(tempFile)
         inst.reset_data()
+    print("Mean: %.2f Median: %.2f Var: %.2f StdDev: %.2f" % (statistics.mean(stats), statistics.median(stats), statistics.variance(stats), statistics.stdev(stats)))
