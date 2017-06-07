@@ -11,7 +11,7 @@ from NB.Solution.route import Route
 from NB.instance.instance import *
 
 # Logger
-logging.basicConfig(level=logging.INFO)
+#logging.basicConfig(level=logging.ERROR)
 logger = logging.getLogger(__name__)
 
 
@@ -93,10 +93,11 @@ def datareading(path):
 def _create_initial_routes():
     routes = []
     for node in nodes.values():
+        '''
         # if type(node) is Charger:
         #     continue
         if _get_route_consumption([node]) > instance.fuelCapacity:
-            next_charger = _find_nearest_charger(node)
+            next_charger = _find_nearest_charger(node).generate_clone()
             if _get_route_consumption([next_charger, node]) > instance.fuelCapacity:
                 logger.error("Customer %s not reachable in this fashion" % (node))
 
@@ -115,11 +116,21 @@ def _create_initial_routes():
                 new_route.pop()
                 new_route.pop(0)
             else:
-                new_route = [next_charger,node]
+                new_route = [node, next_charger]
             route = Route(new_route)
         else:
             route = Route([node])
+            
+        current_fuel = instance.fuelCapacity - instance.getValDistanceMatrix(instance.depot, route[0])
+        for i in range(len(route)-1):'''
+        new_route = _make_fuel_consumption_feasible(Route([node]), Route([]), True)
+        new_route.pop()
+        new_route.pop(0)
+        route = Route(new_route)
         routes.append(route)
+
+
+    print(routes)
     return routes
 
 
@@ -373,6 +384,13 @@ def solving(blacklist):
             new_route_object = Route(new_route)
             routes.append(new_route_object)
     logger.info("Final routes calculated")
+
+    for r in routes:
+        # TODO: check if route violates time windows!!
+        nodes = r.get_nodes()
+        if len(nodes) == 2 and type(nodes[0]) is Customer and type(nodes[1]) is Charger:
+                rev = list(reversed(nodes))
+                r.nodes = rev
     return routes
 
 import os
@@ -384,11 +402,11 @@ def _visualize_solution(instance, solution):
     color = 0
     for n in instance.nodes.values():
         if type(n) == Customer:
-            pos = str(n.x) + "," + str(n.y) + "!"
-            g1.node(n.id, shape="box", color="red", fixedsize="true", width=".2", height=".2", fontsize="9")
+            pos = str(n.x/10) + "," + str(n.y/10) + "!"
+            g1.node(n.id, shape="box", color="red", fixedsize="true", width=".2", height=".2", fontsize="9", pos=pos)
         else:
-            pos = str(n.x) + "," + str(n.y) + "!"
-            g1.node(n.id, color="blue", fixedsize="true", width=".2", height=".2", fontsize="9")
+            pos = str(n.x/10) + "," + str(n.y/10) + "!"
+            g1.node(n.id, color="blue", fixedsize="true", width=".2", height=".2", fontsize="9", pos=pos)
     for r in solution:
         ad_route = [instance.depot]
         ad_route.extend(r.get_nodes()[:])
@@ -409,9 +427,9 @@ def startProgram(args):
     for file_parse in os.listdir(fold):
     # for i in range(0,1):
     #     file_parse = "rc106_21.txt"
-        #if file_parse=="r102_21.txt":
-            #continue
         if file_parse.startswith(".") or file_parse.endswith("sol"):
+            continue
+        if file_parse != "r105C5.txt" and file_parse != "rc101_21.txt" and file_parse != "rc103C15.txt" and file_parse != "rc103_21.txt":
             continue
         datareading(file_parse)
         blacklist = preprocessing()
@@ -420,6 +438,9 @@ def startProgram(args):
         total_cost = 0
         for s in solution:
             total_cost+=s.calc_cost()
+        print(instance.filename)
+        print(total_cost)
+        print()
         if args.verify:
             tempFile = instance.filename + '.sol'
             f = open(tempFile, mode='w')
