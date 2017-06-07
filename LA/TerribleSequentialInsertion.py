@@ -107,6 +107,6 @@ if __name__ == '__main__':
             tempFile = './solutions/'+ instanceFile + '.sol'
             with open(tempFile, mode='w') as f:
                 f.write(str(sol))
-            subprocess.call(['java', '-jar', '../data/verifier/EVRPTWVerifier.jar', '-d', inst.filename, tempFile])
+            subprocess.call(['time', 'java', '-jar', '../data/verifier/EVRPTWVerifier.jar', '-d', inst.filename, tempFile])
             #os.remove(tempFile)
         inst.reset_data()

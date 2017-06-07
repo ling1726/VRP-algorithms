@@ -21,8 +21,8 @@
       <file leaf-file-name="TerribleSequentialInsertion.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/TerribleSequentialInsertion.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="750">
-              <caret line="106" column="51" lean-forward="false" selection-start-line="106" selection-start-column="51" selection-end-line="106" selection-end-column="51" />
+            <state relative-caret-position="795">
+              <caret line="109" column="37" lean-forward="false" selection-start-line="109" selection-start-column="37" selection-end-line="109" selection-end-column="37" />
               <folding>
                 <element signature="e#0#10#0" expanded="true" />
               </folding>
@@ -240,12 +240,12 @@
       <option name="presentableId" value="Default" />
       <updated>1496660887906</updated>
       <workItem from="1496660890021" duration="5337000" />
-      <workItem from="1496773216235" duration="5739000" />
+      <workItem from="1496773216235" duration="5903000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="11076000" />
+    <option name="totallyTimeSpent" value="11240000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="65" y="24" width="1855" height="1056" extended-state="6" />
@@ -346,8 +346,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/TerribleSequentialInsertion.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="750">
-          <caret line="106" column="51" lean-forward="false" selection-start-line="106" selection-start-column="51" selection-end-line="106" selection-end-column="51" />
+        <state relative-caret-position="795">
+          <caret line="109" column="37" lean-forward="false" selection-start-line="109" selection-start-column="37" selection-end-line="109" selection-end-column="37" />
           <folding>
             <element signature="e#0#10#0" expanded="true" />
           </folding>
