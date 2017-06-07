@@ -8,6 +8,7 @@ from route import Route
 import instance.instance as inst 
 import routehelper as rh
 import copy
+import graphviz as gv
 
 import twhelper as tw
 
@@ -80,6 +81,34 @@ class Solution(object):
         routeStr = str.join('\n', [str.join(', ',[str(customer) for customer in route.nodes]) for route in self.routes])
         return '#solution for %s\n%.3f\n%s' % (inst.filename, self.cost, routeStr)
 
+
+
+def _visualize_solution(solution):
+    g1 = gv.Digraph(format='svg', engine="neato")
+    color_step = int(16777215/len(solution.routes)+1)
+    color = 0
+    for n in inst.nodes.values():
+        if n.id.startswith('C'):
+            pos = str(n.x/10) + "," + str(n.y/10) + "!"
+            g1.node(n.id, shape="box", color="red", fixedsize="true", width=".2", height=".2", fontsize="9", pos=pos)
+        elif n.id.startswith('S0'): continue
+        else:
+            pos = str(n.x/10) + "," + str(n.y/10) + "!"
+            g1.node(n.id, color="blue", fixedsize="true", width=".2", height=".2", fontsize="9", pos=pos)
+    for r in solution.routes:
+        ad_route = []
+        ad_route.extend(r.nodes)
+        this_color = "#"+'{:06x}'.format(color)
+        for i in range(len(ad_route)-1):
+            a = ad_route[i].id.split("_")[0]
+            b = ad_route[i+1].id.split("_")[0]
+
+            g1.edge(a, b, penwidth=".7", arrowsize=".2", color=this_color)
+        color += color_step
+
+    g1.format = 'svg'
+    filename = g1.render(filename='img/'+inst.filename.split('/')[3])
+
         
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Runs simple Sequential Heuristic on instance file')
@@ -100,6 +129,7 @@ if __name__ == '__main__':
         sol = Solution()
         sol.sortCustomersByAngle()
         sol.solve()
+        _visualize_solution(sol)
         print(sol.cost)
         #if not args.verify: print(sol)
 
@@ -107,6 +137,6 @@ if __name__ == '__main__':
             tempFile = './solutions/'+ instanceFile + '.sol'
             with open(tempFile, mode='w') as f:
                 f.write(str(sol))
-            subprocess.call(['time', 'java', '-jar', '../data/verifier/EVRPTWVerifier.jar', '-d', inst.filename, tempFile])
+            subprocess.call(['java', '-jar', '../data/verifier/EVRPTWVerifier.jar', '-d', inst.filename, tempFile])
             #os.remove(tempFile)
         inst.reset_data()

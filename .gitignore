@@ -89,3 +89,7 @@ ENV/
 .idea/workspace.xml
 .idea/misc.xml
 .idea/VRP.iml
+
+# ignore images
+*.svg
+LA/img/
