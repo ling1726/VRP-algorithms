@@ -10,6 +10,8 @@ import routehelper as rh
 import copy
 import graphviz as gv
 from copy import deepcopy
+import statistics 
+
 
 import twhelper as tw
 
@@ -34,39 +36,37 @@ class Solution(object):
         for customer in self.customers:
             customer.setAngleFromOrigin()
         self.customers.sort(key=lambda x:x.angle)
-
+        
     def createRoute(self):
         route = Route(self.depot)
         infeasibleCustomers = []
         for customer in self.customers:
             if not route.feasibleInsertion(customer):
                 infeasibleCustomers.append(customer)
-        if len(route.nodes) > 1 and not rh.depotReachable(route, route.last()):
+
+        #No more feasible customers in the route. Last customer must charge first
+        #before going to a) the depot or b) visiting additional customers
+        if not route.empty() and not rh.depotReachable(route, route.last()):
             route.insertCharger(rh.closestCharger(route.last()))
-        
-            #for tryAgainCustomer in infeasibleCustomers:
-             #   chargerRoute.feasibleInsertion(tryAgainCustomer, False)
-            #if not rh.depotReachable(route, route.last()) or len(route.nodes) + 1 < len(chargerRoute.nodes):
-             #   route = chargerRoute
-        
-        if len(route.nodes) == 1: #Empty route
+            
+            #With the charger added, try to insert previously infeasible customers
+            for ic in infeasibleCustomers:
+                route.feasibleInsertion(ic, False)
+
+        elif route.empty():#Handle infeasability case
             for c in infeasibleCustomers:
                 route.insertCharger(rh.closestChargerBetweenTwoNodes(inst.depot, c))
-                print("Inserted charger %s for customer %s" % (rh.closestChargerBetweenTwoNodes(inst.depot, c).id,customer.id))
                 if route.feasibleInsertion(c): 
-                    print("Inserted the bastard %s" % c.id) 
-                    if not rh.depotReachable(route, c):
-                        print("Can't reach depot tho")
                     route.insertCharger(rh.closestChargerBetweenTwoNodes(inst.depot, c))
                     break
-                else: print("Couldn't insert %s" % c.id)
+
         route.insert(self.depot)
-        self.cost += route.getCost()
         return route
         
     def solve(self):
         while(len(self.customers)>0):
             route = self.createRoute()
+            self.cost += route.getCost()
             newCustomerList = []
             # create a new list without chosen customers
             for customer in self.customers:
@@ -117,13 +117,13 @@ if __name__ == '__main__':
     parser.add_argument('--instance', '-i', metavar='INSTANCE_FILE', required=True, help='The instance file')
     parser.add_argument('--verify', '-v', action = 'store_true', help='Uses the EVRPTWVerifier to verify the solution')
     parser.add_argument('--all', '-a', action = 'store_true', help='Runs the algorithms on all instances')
-
+    parser.add_argument('--novisual', '-z', action = 'store_true', help='Turns off the visualization')
     args = parser.parse_args()
     instanceFiles = [args.instance]
     if args.all:
         instanceFiles = os.listdir('../data/instances/')
         
-
+    stats = []
     for instanceFile in instanceFiles:
         if not instanceFile.endswith('.txt'): continue
         inst.setFileName(instanceFile)
@@ -131,14 +131,16 @@ if __name__ == '__main__':
         sol = Solution()
         sol.sortCustomersByAngle()
         sol.solve()
-        _visualize_solution(sol)
+        if not args.novisual: visualize_solution(sol)
         print(sol.cost)
-        #if not args.verify: print(sol)
+        stats.append(sol.cost)
+        if not args.verify: print(sol)
 
         if args.verify:
             tempFile = './solutions/'+ instanceFile + '.sol'
             with open(tempFile, mode='w') as f:
                 f.write(str(sol))
-            subprocess.call(['java', '-jar', '../data/verifier/EVRPTWVerifier.jar', '-d', inst.filename, tempFile])
+            subprocess.call(['java', '-jar', '../data/verifier/EVRPTWVerifier.jar', inst.filename, tempFile])
             #os.remove(tempFile)
         inst.reset_data()
+    print("Mean: %.2f Median: %.2f Var: %.2f StdDev: %.2f" % (statistics.mean(stats), statistics.median(stats), statistics.variance(stats), statistics.stdev(stats)))
