@@ -89,7 +89,7 @@ def _visualize_solution(solution):
     color_step = int(16777215/len(solution.routes)+1)
     color = 0
     for n in inst.nodes.values():
-        print(n.id, n.x, n.y)
+        #print(n.id, n.x, n.y)
         if n.id.startswith('C'):
             pos = str(n.x/10) + "," + str(n.y/10) + "!"
             g1.node(n.id, shape="box", color="red", fixedsize="true", width=".2", height=".2", fontsize="9", pos=pos)
@@ -131,7 +131,7 @@ if __name__ == '__main__':
         sol = Solution()
         sol.sortCustomersByAngle()
         sol.solve()
-        if not args.novisual: visualize_solution(sol)
+        if not args.novisual: _visualize_solution(sol)
         print(sol.cost)
         stats.append(sol.cost)
         if not args.verify: print(sol)
@@ -143,4 +143,4 @@ if __name__ == '__main__':
             subprocess.call(['java', '-jar', '../data/verifier/EVRPTWVerifier.jar', inst.filename, tempFile])
             #os.remove(tempFile)
         inst.reset_data()
-    print("Mean: %.2f Median: %.2f Var: %.2f StdDev: %.2f" % (statistics.mean(stats), statistics.median(stats), statistics.variance(stats), statistics.stdev(stats)))
+    #print("Mean: %.2f Median: %.2f Var: %.2f StdDev: %.2f" % (statistics.mean(stats), statistics.median(stats), statistics.variance(stats), statistics.stdev(stats)))
