@@ -4,16 +4,16 @@ import subprocess
 import argparse
 import logging
 import math
-from route import Route
-import instance.instance as inst 
-import routehelper as rh
-import copy
+import statistics 
 import graphviz as gv
 from copy import deepcopy
-import statistics 
 
+import instance.instance as inst 
+import SimulatedAnnealing as sa
+from route import Route
+from helper import routehelper as rh
+from helper import twhelper as tw
 
-import twhelper as tw
 
 logging.basicConfig(level=logging.ERROR)                                                                       
 logger = logging.getLogger(__name__) 
@@ -76,7 +76,7 @@ class Solution(object):
                 if not chosen: newCustomerList.append(customer)
             self.customers = newCustomerList[:]
             self.routes.append(route)
-
+        return self
         
     def __str__(self):
         routeStr = str.join('\n', [str.join(', ',[str(customer) for customer in route.nodes]) for route in self.routes])
@@ -117,7 +117,8 @@ if __name__ == '__main__':
     parser.add_argument('--instance', '-i', metavar='INSTANCE_FILE', required=True, help='The instance file')
     parser.add_argument('--verify', '-v', action = 'store_true', help='Uses the EVRPTWVerifier to verify the solution')
     parser.add_argument('--all', '-a', action = 'store_true', help='Runs the algorithms on all instances')
-    parser.add_argument('--novisual', '-z', action = 'store_true', help='Turns off the visualization')
+    parser.add_argument('--visual', '-z', action = 'store_true', help='Turns off the visualization')
+    parser.add_argument('--method', '-m', choices = ['constr', 'sa'], help='Choice of algorithm. Default is constructive method.')
     args = parser.parse_args()
     instanceFiles = [args.instance]
     if args.all:
@@ -128,10 +129,15 @@ if __name__ == '__main__':
         if not instanceFile.endswith('.txt'): continue
         inst.setFileName(instanceFile)
         inst.parse()
-        sol = Solution()
-        sol.sortCustomersByAngle()
-        sol.solve()
-        if not args.novisual: _visualize_solution(sol)
+        
+        if args.method and args.method == 'sa':
+            sol = sa.SimulatedAnnealing().solve()
+        else:
+            sol = Solution()
+            sol.sortCustomersByAngle()
+            sol = sol.solve()
+        
+        if args.visual: _visualize_solution(sol)
         print(sol.cost)
         stats.append(sol.cost)
         if not args.verify: print(sol)
@@ -140,7 +146,8 @@ if __name__ == '__main__':
             tempFile = './solutions/'+ instanceFile + '.sol'
             with open(tempFile, mode='w') as f:
                 f.write(str(sol))
-            subprocess.call(['java', '-jar', '../data/verifier/EVRPTWVerifier.jar', inst.filename, tempFile])
-            #os.remove(tempFile)
+            subprocess.call(['java', '-jar', '../data/verifier/EVRPTWVerifier.jar', '-d',inst.filename, tempFile])
+            os.remove(tempFile)
         inst.reset_data()
-    #print("Mean: %.2f Median: %.2f Var: %.2f StdDev: %.2f" % (statistics.mean(stats), statistics.median(stats), statistics.variance(stats), statistics.stdev(stats)))
+    if args.all:
+        print("Mean: %.2f Median: %.2f Var: %.2f StdDev: %.2f" % (statistics.mean(stats), statistics.median(stats), statistics.variance(stats), statistics.stdev(stats)))
