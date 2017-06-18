@@ -28,6 +28,13 @@ class SimulatedAnnealing(object):
     """
 
     def  solve(self):
+        for t in range(sys.maxsize):
+            T = self.schedule(t)
+            if T == 0: break
+            newSolution = self.neighborhood.generate_neighbor(self.routes, self.cost)
+            if newSolution["newTotalCost"] < self.cost: # decide if the new solution should be used
+                self.routes[newSolution["chosenRoutesIndexes"][0]] = newSolution["chosenRoutes"][0]
+                self.routes[newSolution["chosenRoutesIndexes"][1]] = newSolution["chosenRoutes"][1]
         return self
 
     def initial_solution(self):

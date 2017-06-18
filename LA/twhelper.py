@@ -11,12 +11,15 @@ feasible while preserving the order of insertions, this will do it.
 def feasible(route):
     duration = 0
     battery = inst.fuelCapacity
+    capacity = inst.loadCapacity
+    if route[0].id == "D0" and route[1].id == "D0": return True # if the route has no customers it should be feasible
     for i in range(len(route[1:])):
         node = route[i+1]
         battery -= batterySpent(route[i], node)
         duration += travelTime(route[i], node)
         duration += waitTime(node, duration)
-        if duration > node.windowEnd: return False
+        capacity -= node.demand
+        if duration > node.windowEnd or capacity < 0 or battery < 0: return False
         duration += node.serviceTime
         if isinstance(node, charger.Charger): 
             duration += (inst.fuelCapacity - battery) * inst.inverseFuellingRate

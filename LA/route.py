@@ -56,6 +56,16 @@ class Route(object):
     def empty(self):
         return len(self.nodes) <= 1
 
+    def hasNoCustomers(self):
+        return len(self.nodes) == 2
+
+    def clear(self):
+        self.nodes.clear()
+        self.nodes.append(self.depot)
+        self.battery = inst.fuelCapacity
+        self.capacity = inst.loadCapacity
+        self.distance = 0.
+
     def __str__(self):
         return str([node.id for node in self.nodes])
 

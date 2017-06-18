@@ -109,7 +109,7 @@ if __name__ == '__main__':
             with open(tempFile, mode='w') as f:
                 f.write(str(sol))
             subprocess.call(['java', '-jar', '../data/verifier/EVRPTWVerifier.jar', '-d',inst.filename, tempFile])
-            # os.remove(tempFile)
+            os.remove(tempFile)
         inst.reset_data()
     if args.all:
         print("Mean: %.2f Median: %.2f Var: %.2f StdDev: %.2f" % (statistics.mean(stats), statistics.median(stats), statistics.variance(stats), statistics.stdev(stats)))
