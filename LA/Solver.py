@@ -17,18 +17,24 @@ logger = logging.getLogger(__name__)
 
 class Solution(object):
     def __init__(self):
-        self.depot = inst.depot
-        # initialize construction heuristic
-        self.construction = Construction()
-        self.construction.translateByDepot(self.depot)
-        self.construction.sortCustomersByAngle()
-        
-    def solve(self):
-        return self.construction.solve()
+        # solution attributes
+        self.routes = []
+        self.cost = 0.
 
-        
+    def constructInitialSolution(self):
+        construction = Construction()
+        constructionSolution = construction.solve()
+
+        self.routes = deepcopy(constructionSolution.routes)
+        self.cost = constructionSolution.cost
+
+    def solve(self):
+        self.constructInitialSolution()
+
+
     def __str__(self):
-        return str(self.construction)
+        routeStr = str.join('\n', [str.join(', ',[str(customer) for customer in route.nodes]) for route in self.routes])
+        return '#solution for %s\n%.3f\n%s' % (inst.filename, self.cost, routeStr)
 
 
 
@@ -82,7 +88,7 @@ if __name__ == '__main__':
             sol = sa.SimulatedAnnealing().solve()
         else:
             sol = Solution()
-            sol = sol.solve()
+            sol.solve()
         
         if args.visual: _visualize_solution(sol)
         print(sol.cost)

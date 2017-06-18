@@ -26,7 +26,9 @@ class Construction(object):
         self.customers = list(deepcopy(inst.customers).values())
         self.chargers = list(deepcopy(inst.chargers).values())[:]
         self.depot = inst.depot
+
         self. translateByDepot(self.depot)
+        self.sortCustomersByAngle()
 
     def translateByDepot(self, depot):
         for customer in self.customers:
