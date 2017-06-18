@@ -9,7 +9,7 @@ import graphviz as gv
 from copy import deepcopy
 
 import instance.instance as inst 
-import SimulatedAnnealing as sa
+# import SimulatedAnnealing as sa
 from route import Route
 from helper import routehelper as rh
 from helper import twhelper as tw
@@ -62,8 +62,8 @@ class Solution(object):
 
         route.insert(self.depot)
         return route
-        
-    def solve(self):
+
+    def construct(self):
         while(len(self.customers)>0):
             route = self.createRoute()
             self.cost += route.getCost()
@@ -77,6 +77,10 @@ class Solution(object):
             self.customers = newCustomerList[:]
             self.routes.append(route)
         return self
+        
+    def solve(self):
+        return self.construct()
+
         
     def __str__(self):
         routeStr = str.join('\n', [str.join(', ',[str(customer) for customer in route.nodes]) for route in self.routes])
@@ -147,7 +151,7 @@ if __name__ == '__main__':
             with open(tempFile, mode='w') as f:
                 f.write(str(sol))
             subprocess.call(['java', '-jar', '../data/verifier/EVRPTWVerifier.jar', '-d',inst.filename, tempFile])
-            os.remove(tempFile)
+            # os.remove(tempFile)
         inst.reset_data()
     if args.all:
         print("Mean: %.2f Median: %.2f Var: %.2f StdDev: %.2f" % (statistics.mean(stats), statistics.median(stats), statistics.variance(stats), statistics.stdev(stats)))

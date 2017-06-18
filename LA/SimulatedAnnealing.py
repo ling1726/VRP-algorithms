@@ -2,7 +2,7 @@ import sys
 import math
 import logging
 import instance.instance as inst
-import TerribleSequentialInsertion as terrible
+import Solver as terrible
 from neighbor import SimpleNeighborhood as neigh
 
 logger = logging.getLogger(__name__)
