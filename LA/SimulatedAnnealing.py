@@ -9,9 +9,11 @@ logger = logging.getLogger(__name__)
 
 class SimulatedAnnealing(object):
 
-    def __init__(self):
+    def __init__(self, routes, cost):
         self.neighborhood = neigh.SimpleNeighborhood()
-
+        self.routes = routes # initial solution
+        self.cost = cost # initial solution
+    """
     def solve(self):
         current = self.initial_solution()
         nxt = self.neighbor(current)
@@ -23,6 +25,10 @@ class SimulatedAnnealing(object):
             if delta > 0 or random.random() < math.exp(delta/T):
                 current=nxt
         return nxt
+    """
+
+    def  solve(self):
+        return self
 
     def initial_solution(self):
         sol = terrible.Solution()

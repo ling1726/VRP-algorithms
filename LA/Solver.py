@@ -9,7 +9,7 @@ import graphviz as gv
 from copy import deepcopy
 
 import instance.instance as inst 
-# import SimulatedAnnealing as sa
+import SimulatedAnnealing as SA
 
 
 logging.basicConfig(level=logging.ERROR)                                                                       
@@ -22,14 +22,23 @@ class Solution(object):
         self.cost = 0.
 
     def constructInitialSolution(self):
-        construction = Construction()
-        constructionSolution = construction.solve()
+        constructionSolution = Construction()
+        constructionSolution.solve()
 
         self.routes = deepcopy(constructionSolution.routes)
         self.cost = constructionSolution.cost
 
+    def saSolution(self):
+        sa = SA.SimulatedAnnealing(self.routes, self.cost)
+        sa.solve()
+
+        self.routes = deepcopy(sa.routes)
+        self.cost = sa.cost
+
     def solve(self):
         self.constructInitialSolution()
+        self.saSolution()
+
 
 
     def __str__(self):

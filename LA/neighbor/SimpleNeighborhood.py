@@ -12,5 +12,5 @@ class SimpleNeighborhood(object):
         #TODO
         return nxt
 
-    def exchange(self, nxt):
+    def exchange(self, nxt): pass
 
