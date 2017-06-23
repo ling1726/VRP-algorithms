@@ -17,7 +17,7 @@ class SimpleNeighborhood(object):
         # TODO use a random number generator to pick neighbourhoods
         neighbourhood = random.randint(0, 5)
         # for now there is only one neighbourhood implemented
-        newCost = self.relocation(chosenRoutes, initialCost)
+        newCost = self.crossover(chosenRoutes, initialCost)
 
         newTotalCost = cost - initialCost + newCost
 
@@ -25,7 +25,27 @@ class SimpleNeighborhood(object):
 
     def twoExchange(self, chosenRoutes, initialCost): pass
 
-    def crossover(self, chosenRoutes, initialCost): pass
+    def crossover(self, chosenRoutes, initialCost):
+        if chosenRoutes[0].hasNoCustomers() or chosenRoutes[1].hasNoCustomers(): return initialCost
+        initialRoutes = copy.deepcopy(chosenRoutes)
+        for i in range(1, len(chosenRoutes[0].nodes) - 2):
+            for j in range(1, len(chosenRoutes[1].nodes) - 2):
+                success = self.doCrossover(chosenRoutes, i, j)
+
+                newCost = chosenRoutes[0].getCost() + chosenRoutes[1].getCost()
+                feasible = tw.feasible(chosenRoutes[0].nodes) and tw.feasible(chosenRoutes[1].nodes)
+                if feasible and success:
+                    return newCost # stop if a feasible solution is found
+                self.rollbackMove(chosenRoutes, initialRoutes)
+        return initialCost
+
+    def doCrossover(self, chosenRoutes, i, j):
+        # don't exchange anything with a charger
+        if chosenRoutes[0].nodes[i].id.startswith("S") or chosenRoutes[1].nodes[j].id.startswith("S"): return False
+        tmp = chosenRoutes[0].nodes[i+1:] # keep a buffer for replacing
+        chosenRoutes[0].nodes[i+1:] = chosenRoutes[1].nodes[j+1:]
+        chosenRoutes[1].nodes[j+1:] = tmp # replace with buffer
+        return True
 
     def exchange(self, chosenRoutes, initialCost): pass
 
@@ -43,7 +63,6 @@ class SimpleNeighborhood(object):
                 newCost = chosenRoutes[0].getCost() + chosenRoutes[1].getCost()
                 feasible = tw.feasible(chosenRoutes[0].nodes) and tw.feasible(chosenRoutes[1].nodes)
                 if feasible and success:
-                    print("XXXXXXXXXXXXXXX")
                     return newCost # stop if a feasible solution is found
                 self.rollbackMove(chosenRoutes, initialRoutes)
         return initialCost
@@ -55,6 +74,7 @@ class SimpleNeighborhood(object):
         chosenRoutes[1].nodes.insert(j, chosenRoutes[0].nodes[i])
         #remove old node
         del chosenRoutes[0].nodes[i]
+        return True
 
     def rollbackMove(self, chosenRoutes, initialRoutes):
         chosenRoutes[0].clear()
