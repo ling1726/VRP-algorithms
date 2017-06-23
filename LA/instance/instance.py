@@ -137,4 +137,7 @@ def fillDistanceMatrix():
             """
             putDistanceMatrix(Node1, Node2, math.hypot(float(Node1.x) - float(Node2.x), float(Node1.y) - float(Node2.y)))
 
+    for node in nodes:
+        putDistanceMatrix(nodes[node], nodes[node], 0)
+
 

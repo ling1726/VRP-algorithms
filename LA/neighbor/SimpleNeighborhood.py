@@ -14,10 +14,10 @@ class SimpleNeighborhood(object):
         chosenRoutes = [copy.deepcopy(routes[chosenRouteIndexes[0]]), copy.deepcopy(routes[chosenRouteIndexes[1]])]
         initialCost = chosenRoutes[0].getCost() + chosenRoutes[1].getCost() # previous cost of the two routes
 
-        # TODO use a random number generator to pick neighbourhoods
+        # What neighbourhood should we pick?
         neighbourhood = random.randint(0, 2)
 
-        newCost = 10000000
+        newCost = 10000000 # if unmodified the new cost should be so high that it has to be rejected
         if neighbourhood == 0:
             newCost = self.crossover(chosenRoutes, initialCost)
         elif neighbourhood == 1:
@@ -27,7 +27,12 @@ class SimpleNeighborhood(object):
 
         return {"chosenRoutesIndexes": chosenRouteIndexes, "chosenRoutes": chosenRoutes, "newTotalCost": newTotalCost }
 
+    # TODO
     def twoExchange(self, chosenRoutes, initialCost): pass
+    # TODO
+    def exchange(self, chosenRoutes, initialCost): pass
+    # TODO
+    def orExchange(self, chosenRoutes, initialCost): pass
 
     def crossover(self, chosenRoutes, initialCost):
         if chosenRoutes[0].hasNoCustomers() or chosenRoutes[1].hasNoCustomers(): return initialCost
@@ -51,9 +56,7 @@ class SimpleNeighborhood(object):
         chosenRoutes[1].nodes[j+1:] = tmp # replace with buffer
         return True
 
-    def exchange(self, chosenRoutes, initialCost): pass
 
-    def orExchange(self, chosenRoutes, initialCost): pass
 
     def relocation(self, chosenRoutes, initialCost):
         if chosenRoutes[0].hasNoCustomers() or chosenRoutes[1].hasNoCustomers(): return initialCost
