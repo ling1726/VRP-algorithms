@@ -24,7 +24,6 @@ class Solution(object):
     def constructInitialSolution(self):
         constructionSolution = Construction()
         constructionSolution.solve()
-
         self.routes = deepcopy(constructionSolution.routes)
         self.cost = constructionSolution.cost
 
@@ -34,11 +33,11 @@ class Solution(object):
 
         self.routes = deepcopy(sa.routes)
         self.cost = sa.cost
-
+        
     def solve(self):
         self.constructInitialSolution()
-        self.saSolution()
-
+        return self.saSolution()
+        
 
 
     def __str__(self):
@@ -52,7 +51,6 @@ def _visualize_solution(solution):
     color_step = int(16777215/len(solution.routes)+1)
     color = 0
     for n in inst.nodes.values():
-        #print(n.id, n.x, n.y)
         if n.id.startswith('C'):
             pos = str(n.x/10) + "," + str(n.y/10) + "!"
             g1.node(n.id, shape="box", color="red", fixedsize="true", width=".2", height=".2", fontsize="9", pos=pos)
@@ -81,7 +79,7 @@ if __name__ == '__main__':
     parser.add_argument('--verify', '-v', action = 'store_true', help='Uses the EVRPTWVerifier to verify the solution')
     parser.add_argument('--all', '-a', action = 'store_true', help='Runs the algorithms on all instances')
     parser.add_argument('--visual', '-z', action = 'store_true', help='Turns off the visualization')
-    parser.add_argument('--method', '-m', choices = ['constr', 'sa'], help='Choice of algorithm. Default is constructive method.')
+    #parser.add_argument('--method', '-m', choices = ['constr', 'sa'], help='Choice of algorithm. Default is constructive method.')
     args = parser.parse_args()
     instanceFiles = [args.instance]
     if args.all:
@@ -92,20 +90,14 @@ if __name__ == '__main__':
         if not instanceFile.endswith('.txt'): continue
         inst.setFileName(instanceFile)
         inst.parse()
-        
-        if args.method and args.method == 'sa':
-            sol = sa.SimulatedAnnealing().solve()
-        else:
-            sol = Solution()
-            sol.solve()
-        
-        if args.visual: _visualize_solution(sol)
-        print(sol.cost)
+        sol = Solution()
+        sol.solve()
         stats.append(sol.cost)
-        if not args.verify: print(sol)
 
+        if args.visual: _visualize_solution(sol)
+        if not args.verify: print(sol)
         if args.verify:
-            tempFile = './solutions/'+ instanceFile + '.sol'
+            tempFile = instanceFile + '.sol'
             with open(tempFile, mode='w') as f:
                 f.write(str(sol))
             subprocess.call(['java', '-jar', '../data/verifier/EVRPTWVerifier.jar', '-d',inst.filename, tempFile])

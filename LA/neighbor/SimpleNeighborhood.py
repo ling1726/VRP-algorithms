@@ -7,6 +7,8 @@ class SimpleNeighborhood(object):
 
     def __init__(self):
         pass
+    
+
     # current should be a route object, so we can handle costs and so on
     def generate_neighbor(self, routes, cost):
         chosenRouteIndexes = random.sample(range(0, len(routes)), 2)
