@@ -15,9 +15,13 @@ class SimpleNeighborhood(object):
         initialCost = chosenRoutes[0].getCost() + chosenRoutes[1].getCost() # previous cost of the two routes
 
         # TODO use a random number generator to pick neighbourhoods
-        neighbourhood = random.randint(0, 5)
-        # for now there is only one neighbourhood implemented
-        newCost = self.crossover(chosenRoutes, initialCost)
+        neighbourhood = random.randint(0, 2)
+
+        newCost = 10000000
+        if neighbourhood == 0:
+            newCost = self.crossover(chosenRoutes, initialCost)
+        elif neighbourhood == 1:
+            newCost = self.relocation(chosenRoutes, initialCost)
 
         newTotalCost = cost - initialCost + newCost
 
