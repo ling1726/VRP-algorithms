@@ -6,7 +6,7 @@ import logging
 import math
 import statistics
 import graphviz as gv
-from copy import deepcopy
+import pickle
 
 import instance.instance as inst
 # import SimulatedAnnealing as sa
@@ -23,8 +23,8 @@ class Construction(object):
         self.routes = [] #routes is a Python list of Route objects [Route, Route, ...]
         self.cost = 0.
         self.distanceMatrix = inst._distanceMatrix
-        self.customers = list(deepcopy(inst.customers).values())
-        self.chargers = list(deepcopy(inst.chargers).values())[:]
+        self.customers = list(self._cp(inst.customers).values())
+        self.chargers = list(self._cp(inst.chargers).values())[:]
         self.depot = inst.depot
 
         self. translateByDepot(self.depot)
@@ -82,6 +82,10 @@ class Construction(object):
 
     def solve(self):
         return self.construct()
+
+        
+    def _cp(self,o):
+        return pickle.loads(pickle.dumps(o,-1)) 
 
 
     def __str__(self):

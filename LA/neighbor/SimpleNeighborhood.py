@@ -1,5 +1,5 @@
 import instance.instance as inst
-import copy
+import pickle
 import twhelper as tw
 import random
 
@@ -12,8 +12,7 @@ class SimpleNeighborhood(object):
     # current should be a route object, so we can handle costs and so on
     def generate_neighbor(self, routes, cost):
         chosenRouteIndexes = random.sample(range(0, len(routes)), 2)
-        # the routes on which we apply the operator
-        chosenRoutes = [copy.deepcopy(routes[chosenRouteIndexes[0]]), copy.deepcopy(routes[chosenRouteIndexes[1]])]
+        chosenRoutes = [self._cp(routes[chosenRouteIndexes[0]]), self._cp(routes[chosenRouteIndexes[1]])]
         initialCost = chosenRoutes[0].getCost() + chosenRoutes[1].getCost() # previous cost of the two routes
 
         # What neighbourhood should we pick?
@@ -38,7 +37,8 @@ class SimpleNeighborhood(object):
 
     def crossover(self, chosenRoutes, initialCost):
         if chosenRoutes[0].hasNoCustomers() or chosenRoutes[1].hasNoCustomers(): return initialCost
-        initialRoutes = copy.deepcopy(chosenRoutes)
+        #initialRoutes = copy.deepcopy(chosenRoutes)
+        initialRoutes = self._cp(chosenRoutes)
         for i in range(1, len(chosenRoutes[0].nodes) - 2):
             for j in range(1, len(chosenRoutes[1].nodes) - 2):
                 success = self.doCrossover(chosenRoutes, i, j)
@@ -62,7 +62,7 @@ class SimpleNeighborhood(object):
 
     def relocation(self, chosenRoutes, initialCost):
         if chosenRoutes[0].hasNoCustomers() or chosenRoutes[1].hasNoCustomers(): return initialCost
-        initialRoutes = copy.deepcopy(chosenRoutes)
+        initialRoutes = self._cp(chosenRoutes)
         for i in range(1, len(chosenRoutes[0].nodes)-1): # indexes ignore the depot
             for j in range(1, len(chosenRoutes[1].nodes)-1):
                 # do not exchange anything for a charger
@@ -92,3 +92,6 @@ class SimpleNeighborhood(object):
             chosenRoutes[0].insert(initialRoutes[0].nodes[i])
         for i in range(1, len(initialRoutes[1].nodes)):
             chosenRoutes[1].insert(initialRoutes[1].nodes[i])
+
+    def _cp(self, o):
+        return pickle.loads(pickle.dumps(o,-1))

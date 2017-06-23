@@ -1,6 +1,6 @@
 import instance.instance as inst
 import twhelper as tw
-import copy
+import pickle
 
 def depotReachable(route, node):
     res = route.battery - _b(node, inst.depot)
@@ -27,7 +27,7 @@ def closestChargerBetweenTwoNodes(node1, node2):
 
 def _sufficientTimeForCharging(route, node):
     if route.last() != node:
-        route = copy.deepcopy(route)
+        route = _cp(route)
         route.insert(node)
     cc = closestCharger(route.last())
     return tw.feasible(route.nodes + [cc, inst.depot])
@@ -40,3 +40,6 @@ def _b(node1, node2):
 
 def _d(node1, node2):
     return inst.getValDistanceMatrix(node1, node2)
+
+def _cp(o):
+    return pickle.loads(pickle.dumps(o,-1)) 

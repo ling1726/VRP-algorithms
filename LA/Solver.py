@@ -6,7 +6,7 @@ import logging
 from Construction import Construction
 import statistics 
 import graphviz as gv
-from copy import deepcopy
+import pickle
 
 import instance.instance as inst 
 import SimulatedAnnealing as SA
@@ -24,21 +24,22 @@ class Solution(object):
     def constructInitialSolution(self):
         constructionSolution = Construction()
         constructionSolution.solve()
-        self.routes = deepcopy(constructionSolution.routes)
+        self.routes = self._cp(constructionSolution.routes)
         self.cost = constructionSolution.cost
 
     def saSolution(self):
         sa = SA.SimulatedAnnealing(self.routes, self.cost)
         sa.solve()
 
-        self.routes = deepcopy(sa.routes)
+        self.routes = self._cp(sa.routes)
         self.cost = sa.cost
         
     def solve(self):
         self.constructInitialSolution()
         return self.saSolution()
         
-
+    def _cp(self, o):
+        return pickle.loads(pickle.dumps(o,-1)) 
 
     def __str__(self):
         routeStr = str.join('\n', [str.join(', ',[str(customer) for customer in route.nodes]) for route in self.routes])
