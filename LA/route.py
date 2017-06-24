@@ -57,7 +57,10 @@ class Route(object):
         return len(self.nodes) <= 1
 
     def hasNoCustomers(self):
-        return len(self.nodes) == 2
+        return len(self.nodes) == 2 
+
+    def hasCustomer(self):
+        return any(n.id.startswith('C') for n in self.nodes)
 
     def clear(self):
         self.nodes.clear()
