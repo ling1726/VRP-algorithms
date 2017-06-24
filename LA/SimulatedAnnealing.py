@@ -23,7 +23,7 @@ class SimulatedAnnealing(object):
             if math.isclose(T, 0, abs_tol=0.0001) or t > self.maxTries: break
             newSolution = self.neighborhood.generate_neighbor(self.routes, self.cost)
             delta = newSolution["newTotalCost"] - self.cost
-            if delta < 0 or random() < self.acceptance_probability_relaxed(delta, T): # decide if the new solution should be used
+            if delta < 0 or random() < self.acceptance_probability(delta, T): # decide if the new solution should be used
                 self.routes[newSolution["chosenRoutesIndexes"][0]] = newSolution["chosenRoutes"][0]
                 self.routes[newSolution["chosenRoutesIndexes"][1]] = newSolution["chosenRoutes"][1]
                 self.cost = newSolution["newTotalCost"]
@@ -37,12 +37,6 @@ class SimulatedAnnealing(object):
         return self.T0 / math.log(t+2)
 
     def acceptance_probability(self, delta, T):
-        p = 0
-        try:p = 1/(1 + math.exp(delta/T))
-        except OverflowError: pass
-        return p
-
-    def acceptance_probability_relaxed(self, delta, T):
         p = 0
         try: p = math.exp(-delta/T)
         except OverflowError: pass
