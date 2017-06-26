@@ -21,13 +21,11 @@ class Route(object):
         self.nodes.insert(index, new_node)
         self.start = self.nodes[0]
         self.end = self.nodes[-1]
-        self.changed = True
 
     def remove_node(self, node):
         self.nodes.remove(node)
         self.start = self.nodes[0]
         self.end = self.nodes[-1]
-        self.changed = True
 
     def calc_cost(self):
         return util.calculate_route_cost(self.nodes,instance.depot, instance.depot)

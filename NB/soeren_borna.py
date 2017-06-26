@@ -1,17 +1,18 @@
 import argparse
 import os
+import subprocess
 from operator import itemgetter
 
-import subprocess
 import graphviz as gv
 
 import NB.instance.instance as instance
-from NB import util
+import NB.util as util
 from NB.Solution.route import Route
+from NB.construction_heuristic import _create_initial_routes, _calculate_savings, _get_routes
 from NB.instance.instance import *
 
 # Logger
-#logging.basicConfig(level=logging.ERROR)
+# logging.basicConfig(level=logging.ERROR)
 logger = logging.getLogger(__name__)
 
 
@@ -55,7 +56,6 @@ def preprocessing():
                 continue
 
             allowedArc = False
-            # TODO: Check if we need to use instance.chargers
             for charge1Key in instance.chargers:
                 if allowedArc:
                     break
@@ -89,297 +89,18 @@ def datareading(path):
     pass
 
 
-# from here on down this is the savings algorithm
-def _create_initial_routes():
-    routes = []
-    for node in nodes.values():
-        '''
-        # if type(node) is Charger:
-        #     continue
-        if _get_route_consumption([node]) > instance.fuelCapacity:
-            next_charger = _find_nearest_charger(node).generate_clone()
-            if _get_route_consumption([next_charger, node]) > instance.fuelCapacity:
-                logger.error("Customer %s not reachable in this fashion" % (node))
-
-                new_route = _make_fuel_consumption_feasible(Route([node]), Route([]), True)
-                # # we need to set the time needed to charge
-                # new_route.append(instance.depot)
-                # new_route.insert(0,instance.depot)
-                # dist = 0
-                # for j in range(1,len(new_route)):
-                #     if type(new_route[j]) is Charger and new_route[j]!= instance.depot:
-                #         fuel_used = dist*instance.fuelConsumptionRate
-                #         node.load_time = (instance.fuelCapacity - fuel_used) * instance.inverseFuellingRate
-                #         dist = 0
-                #     else:
-                #         dist+=instance.getValDistanceMatrix(new_route[j-1], new_route[j])
-                new_route.pop()
-                new_route.pop(0)
-            else:
-                new_route = [node, next_charger]
-            route = Route(new_route)
-        else:
-            route = Route([node])
-            
-        current_fuel = instance.fuelCapacity - instance.getValDistanceMatrix(instance.depot, route[0])
-        for i in range(len(route)-1):'''
-        new_route = _make_fuel_consumption_feasible(Route([node]), Route([]), True)
-        new_route.pop()
-        new_route.pop(0)
-        route = Route(new_route)
-        routes.append(route)
-
-
-    #print(routes)
-    return routes
-
-
-# this assumes that every visit to any charger charges the vehicle fully and returns the maximum consumption of any part of this route between to chargers
-def _get_route_consumption(nodes):
-    last_charger = instance.depot
-    max_length = 0
-    part_route = []
-    for node in nodes:
-        if type(node) is Charger:
-            part_length = util.calculate_route_cost(part_route, start=last_charger, end=node)
-            if part_length > max_length:
-                max_length = part_length
-            part_route = []
-            last_charger = node
-        else:
-            part_route.append(node)
-    part_length = util.calculate_route_cost(part_route, start=last_charger, end=instance.depot)
-    if part_length > max_length:
-        max_length = part_length
-    return max_length * instance.fuelConsumptionRate
-
-
-def _calculate_savings(routes, blacklist):
-    # savings are kept as list of tuples (first_node, second_node, savings_value) to be more easily sorted
-    savings = []
-    for route1 in routes:
-        for route2 in routes:
-            if (route1.end.id, route2.start.id) in blacklist:
-                continue
-            if route1 == route2:
-                continue
-            if type(route2.start) is Charger:
-                continue
-            a = instance.getValDistanceMatrix(route1.end, nodes.get('S0'))
-            b = instance.getValDistanceMatrix(nodes.get('S0'), route2.start)
-            c = instance.getValDistanceMatrix(route1.end, route2.start)
-            new_savings_value = a + b - c
-            savings.append((route1.end, route2.start, new_savings_value))
-
-    logger.info("Savings calculated")
-    return [sav for sav in savings if sav[2] > 0]
-
-
-def _get_routes(sav, routes):
-    found1 = False
-    found2 = False
-    for route in routes:
-        if route.end == sav[0]:
-            route1 = route
-            found1 = True
-        if route.start == sav[1]:
-            route2 = route
-            found2 = True
-        if found1 and found2:
-            break
-    if (found1 and found2):
-        logger.debug("this routes found: %s, %s" % (route1, route2))
-        return (route1, route2)
-    else:
-        logger.debug("No route found")
-        return (None, None)
-
-
-def _find_nearest_charger(node):
-    min_distance = math.inf
-    min_charger = None
-    for charger in chargers.values():
-        this_distance = instance.getValDistanceMatrix(node, charger)
-        if this_distance < min_distance and not charger.equal_to(node):
-            min_distance = this_distance
-            min_charger = charger
-    return min_charger
-
-
-def add_charger(test_route, charger_index, use_heurisitic):
-    """
-    Method looks backward for the first feasible charger insertion
-    :param test_route:
-    :param charger_index: desired charged index
-    :return: if inserted charger is depot or charger can not be added to make route feasible returns empty list,
-            otherwise feasible route
-    """
-    tmp_route = test_route[:]
-    charger_org = None
-    feasible_insertion = False
-    for i in reversed(range(1, charger_index)):
-        charger_org = _find_nearest_charger(test_route[i])
-        charger_temp = charger_org.generate_clone()
-        # insert charger
-        tmp_route.insert(i + 1, charger_temp)
-        feasible_insertion = instance.fuelCapacity >= _get_route_consumption(tmp_route[:charger_index + 2]) * instance.fuelConsumptionRate
-        if feasible_insertion:
-            break
-        del tmp_route[i+1]
-
-    # if feasible insertion is not found or it is depot or it is charger right before the depot
-    if charger_org and charger_org.equal_to(instance.depot):# or type(tmp_route[-2]) is Charger :
-         tmp_route = []
-    elif not feasible_insertion and use_heurisitic:
-        #heurisic insertion
-         edge = _most_consuming_edge(tmp_route[:charger_index + 1])
-         nearest_charger = _nearest_charger(tmp_route[edge[0]], tmp_route[edge[1]]).generate_clone()
-         #nearest_charger = _find_nearest_charger(tmp_route[edge[0]])
-         tmp_route.insert(edge[1],nearest_charger)
-    elif not feasible_insertion and tmp_route == test_route:
-        tmp_route = []
-
-    return tmp_route
-
-def _most_consuming_edge(route):
-    max_dist = 0
-    node_indexes = None
-    for i in range(len(route)-1):
-        temp_dist = instance.getValDistanceMatrix(route[i], route[i+1])
-        if temp_dist > max_dist:
-            max_dist = temp_dist
-            node_indexes = (i, i+1)
-    return node_indexes
-
-def _nearest_charger(node1, node2):
-    min_dist = None
-    min_charger = None
-
-    for charger in chargers.values():
-        if charger.equal_to(node1) or charger.equal_to(node2):
-            continue
-        dist = instance.getValDistanceMatrix(node1, charger)
-        dist += instance.getValDistanceMatrix(charger, node2)
-        if min_dist is None or dist < min_dist:
-            min_dist = dist
-            min_charger = charger
-    return min_charger
-
-def _make_fuel_consumption_feasible(route1, route2, use_heuristic=True):
-    test_route = route1.get_nodes() + route2.get_nodes()
-
-    # for testing, we add the depots
-    test_route.insert(0, instance.depot)
-    test_route.append(instance.depot)
-     # fuel consumption test, INCLUDING Insertion of Chargers where necessary (If possible)
-    i = 0
-    current_fuel = instance.fuelCapacity
-    while i < len(test_route) - 1:
-        if type(test_route[i]) is Charger and not test_route[i].equal_to(instance.depot):
-            # record the time we need to spend at this charger
-            test_route[i].load_time = (instance.fuelCapacity - current_fuel) * instance.inverseFuellingRate
-            current_fuel = instance.fuelCapacity
-        next_fuel = current_fuel - instance.getValDistanceMatrix(test_route[i],
-                                                                 test_route[i + 1]) * instance.fuelConsumptionRate
-        if next_fuel < 0:
-            test_route = add_charger(test_route, i + 1, use_heuristic)
-            # Use implicit falseness off empty list
-            if not test_route or len(test_route) > 100:
-                logger.debug(
-                    "Rejected combination of %s and %s, because theres no good way to insert a charger" % (
-                        route1, route2))
-                return []
-            i = 0
-            current_fuel = instance.fuelCapacity
-        else:
-            current_fuel = next_fuel
-            i += 1
-
-    return test_route
-
-def _check_combination(route1, route2):
-    # Here we need to check if this solution is feasible
-    # For now we just the newly created route and calculate the consumption, capacity etc...
-    # There might be a better way to do this
-
-    test_route = _make_fuel_consumption_feasible(route1,route2)
-    current_capacity = 0
-    current_time = 0
-
-    for i in range(len(test_route) - 1):
-
-        # Check Time Windows
-
-        # add time used to charge if the current node is a charger
-        if type(test_route[i]) is Charger:
-            current_time += test_route[i].load_time
-
-        next_time = current_time + test_route[i].serviceTime + instance.averageVelocity * instance.getValDistanceMatrix(
-            test_route[i], test_route[i + 1])
-        if next_time > test_route[i + 1].windowEnd:
-            logger.debug("Rejected combination of %s and %s, because we exceeded time window at %s" % (
-                route1, route2, test_route[i + 1]))
-            return []
-        current_time = max(next_time, test_route[i + 1].windowStart)
-
-        # Check Capacity Constraints
-        next_capacity = current_capacity + test_route[i + 1].demand
-        if next_capacity > instance.loadCapacity:
-            logger.debug("Rejected combination of %s and %s, because we exceeded maximal capacity at %s" % (
-                route1, route2, test_route[i + 1]))
-            return []
-        current_capacity = next_capacity
-
-        '''This is just debug stuff
-        print("our current route is:")
-        print(test_route)
-        print("from:")
-        print(route1)
-        print(route2)
-        print("and we are at this node: %s" % test_route[i])
-        charger = 0
-        cust = 0
-        for node in test_route:
-            if type(node) is Charger:
-                charger += 1
-            if type(node) is Customer:
-                cust += 1
-        print()
-        print("Chargers: %d\nCustomers: %d" % (charger, cust))
-        print()
-        print("currentCapacity: %d\nDemand of next Node: %d\nnextCapacity: %d" % (current_capacity, test_route[i+1].demand, next_capacity))
-        input()'''
-
-    if test_route:
-        # After this check we remove depots again because we work with savings
-        del test_route[0]
-        del test_route[-1]
-    return test_route
-
-def _delete_only_charger_routes(routes):
-    tmp_routes = routes[:]
-    for route in routes:
-        have_customer = False
-        for node in route.get_nodes():
-            if type(node) is Customer:
-                have_customer = True
-                break
-        if not have_customer:
-            tmp_routes.remove(route)
-    return tmp_routes
-
-def solving(blacklist):
+def construction_heuristic(blacklist):
     # Here we will use savings criteria (paralell) for now. This might be switched afterwards
     routes = _create_initial_routes()
     savings = _calculate_savings(routes, blacklist)
-    routes = _delete_only_charger_routes(routes)
+    routes = util._delete_only_charger_routes(routes)
 
     savings.sort(key=itemgetter(2), reverse=True)
     for sav in savings:
         route1, route2 = _get_routes(sav, routes)
         if route1 is None or route2 is None or route1 == route2:
             continue
-        new_route = _check_combination(route1, route2)
+        new_route = util._check_combination(route1.get_nodes() + route2.get_nodes())
         if new_route:
             routes.remove(route1)
             routes.remove(route2)
@@ -391,7 +112,8 @@ def solving(blacklist):
         # TODO: check if route violates time windows!!
         nodes = r.get_nodes()
         if len(nodes) == 2 and type(nodes[0]) is Customer and type(nodes[1]) is Charger:
-            start_time = max(instance.getValDistanceMatrix(instance.depot, nodes[0])*instance.averageVelocity, nodes[0].windowStart)
+            start_time = max(instance.getValDistanceMatrix(instance.depot, nodes[0]) * instance.averageVelocity,
+                             nodes[0].windowStart)
             a = instance.getValDistanceMatrix(nodes[0], nodes[1]) * instance.averageVelocity
             b = instance.getValDistanceMatrix(nodes[1], instance.depot) * instance.averageVelocity
             endtime = start_time + nodes[0].serviceTime + a + b + nodes[1].load_time
@@ -399,93 +121,92 @@ def solving(blacklist):
                 print(instance.filename)
                 rev = list(reversed(nodes))
                 r.nodes = rev
-
-
-    '''for r in routes:
-        test_route= r.get_nodes()
-        test_route.insert(0,instance.depot)
-        test_route.append(instance.depot)
-        # TODO: check if route violates time windows!!
-        current_time=0
-        for j in range(len(test_route)-1):
-            if type(test_route[j]) is Charger:
-                current_time += test_route[j].load_time
-
-            next_time = current_time + test_route[j].serviceTime + instance.averageVelocity * instance.getValDistanceMatrix(
-                test_route[j], test_route[j + 1])
-            #exceeded time window
-            if next_time > test_route[j + 1].windowEnd:
-                test_route.pop()
-                test_route.pop(0)
-                r.nodes=list(reversed(test_route))
-                break
-            current_time = max(next_time, test_route[j + 1].windowStart)'''
+        r.update()
     return routes
 
-import os
+
+def variable_neighbourhood_descent(solution):
+    neighbourhoods = []
+    current_best = solution
+    for i in range(len(neighbourhoods)):
+        neighbourhood = neighbourhoods[i]
+        tmp = sorted(neighbourhood.generate_neighbourhood(current_best), key=lambda x: x.cost)
+        if tmp.cost < current_best.cost:
+            current_best = tmp
+            i = 0
+
+    return current_best
+
 def _visualize_solution(instance, solution):
     g1 = gv.Digraph(format='svg', engine="neato")
-    color_step = int(16777215/len(solution)+1)
+    color_step = int(16777215 / len(solution) + 1)
     color = 0
     for n in instance.nodes.values():
         if type(n) == Customer:
-            pos = str(n.x/10) + "," + str(n.y/10) + "!"
+            pos = str(n.x / 10) + "," + str(n.y / 10) + "!"
             g1.node(n.id, shape="box", color="red", fixedsize="true", width=".2", height=".2", fontsize="9", pos=pos)
         else:
-            pos = str(n.x/10) + "," + str(n.y/10) + "!"
+            pos = str(n.x / 10) + "," + str(n.y / 10) + "!"
             g1.node(n.id, color="blue", fixedsize="true", width=".2", height=".2", fontsize="9", pos=pos)
     for r in solution:
         ad_route = [instance.depot]
         ad_route.extend(r.get_nodes()[:])
         ad_route.append(instance.depot)
-        this_color = "#"+'{:06x}'.format(color)
-        for i in range(len(ad_route)-1):
+        this_color = "#" + '{:06x}'.format(color)
+        for i in range(len(ad_route) - 1):
             a = ad_route[i].id.split("_")[0]
-            b = ad_route[i+1].id.split("_")[0]
+            b = ad_route[i + 1].id.split("_")[0]
 
             g1.edge(a, b, penwidth=".7", arrowsize=".2", color=this_color)
         color += color_step
 
-    filename = g1.render(filename='img/'+instance.filename)
+    filename = g1.render(filename='img/' + instance.filename)
+
+
+def write_solution(solution):
+    total_cost = 0
+    for s in solution:
+        total_cost += s.calc_cost()
+    print(instance.filename)
+    print(total_cost)
+    print()
+    if args.verify:
+        tempFile = instance.filename + '.sol'
+        f = open(tempFile, mode='w')
+        f.write(str(round(total_cost, 3)) + "\n")
+        for r in solution:
+            sol_line = "D0, "
+            for c in r.get_nodes():
+                sol_line += str(c).split("_")[0]
+                sol_line += ", "
+            sol_line += "D0\n"
+            f.write(sol_line)
+        f.close()
+
+        p2 = subprocess.check_output(
+            ['java', '-jar', '../data/verifier/EVRPTWVerifier.jar', '-d', instance.filename, tempFile])
+        print(p2)
+        # os.remove(tempFile)
 
 
 def startProgram(args):
-    fold="../data/instances"
+    fold = "../data/instances"
     for file_parse in os.listdir(fold):
-    # for i in range(0,1):
-    #     file_parse = "rc106_21.txt"
+        # for i in range(0,1):
+        #     file_parse = "rc106_21.txt"
         if file_parse.startswith(".") or file_parse.endswith("sol"):
             continue
         datareading(file_parse)
         blacklist = preprocessing()
-        solution = solving(blacklist)
+        solution = construction_heuristic(blacklist)
+        solution = variable_neighbourhood_descent(solution)
         _visualize_solution(instance, solution)
-        total_cost = 0
-        for s in solution:
-            total_cost+=s.calc_cost()
-        print(instance.filename)
-        print(total_cost)
-        print()
-        if args.verify:
-            tempFile = instance.filename + '.sol'
-            f = open(tempFile, mode='w')
-            f.write(str(round(total_cost,3))+"\n")
-            for r in solution:
-                sol_line = "D0, "
-                for c in r.get_nodes():
-                    sol_line += str(c).split("_")[0]
-                    sol_line += ", "
-                sol_line += "D0\n"
-                f.write(sol_line)
-            f.close()
+        write_solution(solution)
 
-            p2 = subprocess.check_output(['java', '-jar', '../data/verifier/EVRPTWVerifier.jar', '-d', instance.filename, tempFile])
-            print(p2)
-            #os.remove(tempFile)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Runs simple Sequential Heuristic on instance file')
     parser.add_argument('--instance', '-i', metavar='INSTANCE_FILE', required=True, help='The instance file')
-    parser.add_argument('--verify', '-v', action = 'store_true', help='Uses the EVRPTWVerifier to verify the solution')
+    parser.add_argument('--verify', '-v', action='store_true', help='Uses the EVRPTWVerifier to verify the solution')
     args = parser.parse_args()
     startProgram(args)

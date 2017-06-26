@@ -1,6 +1,6 @@
-from NB.methaheuristic.Neighbourhood import Neighbourhood
-from NB.util import *
-import copy
+from NB.neighbourhoods.Neighbourhood import Neighbourhood
+import NB.util as util
+
 import random
 
 class SwapCustomersInter(Neighbourhood):
@@ -13,8 +13,8 @@ class SwapCustomersInter(Neighbourhood):
         :param x: Solution class object
         :return:
         """
-        farthest_customers = [x for route in x.routes get_farthest_customer(route)]
-
+        farthest_customers = [x for route in x.routes util.get_farthest_customer(route)]
+        neighbourhood = []
         for i in range(len(farthest_customers)):
             for j in range(j + 1,len(farthest_customers)):
                 #not deep copy because you have to delete chargers
@@ -24,9 +24,21 @@ class SwapCustomersInter(Neighbourhood):
                 route1.remove_node(farthest_customers[i])
                 route1.add_node_at(farthest_customers[j],random.randint(0, len(route1.nodes)))
                 route1.update()
+                checked = util._check_combination(route1.get_nodes())
+                #combination is not feasible
+                if not checked:
+                    continue
 
                 route2 = neighbour[j]
                 route2.remove_node(farthest_customers[j])
                 route2.add_node_at(farthest_customers[i],random.randint(0, len(route2.nodes)))
                 route2.update()
+                checked = util._check_combination(route2.get_nodes())
+                #combination is not feasible
+                if not checked:
+                    continue
+
+                neighbourhood.append(neighbour)
+
+        return neighbourhood
 
