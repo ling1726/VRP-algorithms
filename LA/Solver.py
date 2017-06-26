@@ -10,7 +10,8 @@ import pickle
 
 import instance.instance as inst 
 import SimulatedAnnealing as SA
-
+import twhelper as tw
+import routehelper as rh
 
 logging.basicConfig(level=logging.ERROR)                                                                       
 logger = logging.getLogger(__name__) 
@@ -20,6 +21,8 @@ class Solution(object):
         # solution attributes
         self.routes = []
         self.cost = 0.
+        tw.setDistanceMatrix(inst._distanceMatrix)
+        rh.precomputeClosestCharger()
 
     def constructInitialSolution(self):
         constructionSolution = Construction()

@@ -2,6 +2,9 @@ import instance.instance as inst
 import twhelper as tw
 import pickle
 
+closestChargers = {}
+chargersWithoutS0 = []
+
 def depotReachable(route, node):
     res = route.battery - _b(node, inst.depot)
     if route.last() != node: res -= _b(route.last(), node)
@@ -22,9 +25,11 @@ def closestCharger(node):
     return min(inst.chargers.values(), key=lambda x: _b(node, x))
 
 def closestChargerBetweenTwoNodes(node1, node2):
-    chargersWithoutS0 = [s for s in inst.chargers.values() if s.id != 'S0']
     return min(chargersWithoutS0, key=lambda x: _b(node1,x) + _b(x, node2))
-    
+
+def minCostCharger(node1, node2):
+        return closestChargers[(node1.id,node2.id)]
+
 def _sufficientTimeForCharging(route, node):
     if route.last() != node:
         route = _cp(route)
@@ -43,3 +48,13 @@ def _d(node1, node2):
 
 def _cp(o):
     return pickle.loads(pickle.dumps(o,-1)) 
+
+def precomputeClosestCharger():
+    global closestCharger, chargersWithoutS0
+    chargersWithoutS0 = [s for s in inst.chargers.values() if s.id != 'S0']
+    for n in inst.nodes.values():
+        for m in inst.nodes.values():
+            c = closestChargerBetweenTwoNodes(n,m)
+            closestChargers[(n.id,m.id)] = c
+            closestChargers[(m.id,n.id)] = c
+            

@@ -1,6 +1,7 @@
 import instance.instance as inst
 import instance.charger as charger
 
+dm = None
 """
 @return True if route is Time Window feasible, False otherwise.
 
@@ -30,7 +31,11 @@ def waitTime(node, duration):
     return max(0, node.windowStart - duration)
 
 def travelTime(previous, node):
-    return inst._distanceMatrix[(previous.id, node.id)]/inst.averageVelocity
+    return dm[(previous.id, node.id)]/inst.averageVelocity
     
 def batterySpent(previous, node):
-    return inst._distanceMatrix[(previous.id, node.id)] * inst.fuelConsumptionRate
+    return dm[(previous.id, node.id)] * inst.fuelConsumptionRate
+
+def setDistanceMatrix(distanceMatrix):
+    global dm
+    dm = distanceMatrix
