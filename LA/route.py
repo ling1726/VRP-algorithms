@@ -20,7 +20,6 @@ class Route(object):
         for charger in self.chargers:
             charger.translateByDepot(depot)
     
-    
     def feasibleInsertion(self, customer, relaxedInsertion = True):
         if not self.feasible(customer): return False
 
@@ -37,11 +36,25 @@ class Route(object):
         return True
 
     def getCost(self):
-        return rh.cost(self)
+        return self.distance
 
+    def assign(self, i, node):
+        old = self.nodes[i]
+        self.nodes[i] = node
+        self.distance += rh._d(self.nodes[i-1],node) + rh._d(node, self.nodes[i+1]) - (rh._d(self.nodes[i-1],old) + rh._d(old, self.nodes[i+1])) 
+
+    def insert_at(self, i, node):
+        self.distance += - rh._d(self.nodes[i-1], self.nodes[i]) + rh._d(self.nodes[i-1], node) + rh._d(node, self.nodes[i])                                                               
+        self.nodes.insert(i, node)
+
+    def remove_at(self, i):
+        self.distance += rh._d(self.nodes[i-1], self.nodes[i+1]) - rh._d(self.nodes[i-1], self.nodes[i]) - rh._d(self.nodes[i], self.nodes[i+1])                                                               
+        del self.nodes[i]
+    
     def insert(self, customer):
-        self.distance += inst._distanceMatrix[(self.nodes[-1].id, customer.id)]
-        self.battery = self.battery - (inst._distanceMatrix[(self.nodes[-1].id, customer.id)]*inst.fuelConsumptionRate)
+        dist = inst._distanceMatrix[(self.nodes[-1].id, customer.id)]
+        self.distance += dist
+        self.battery = self.battery - (dist*inst.fuelConsumptionRate)
         self.capacity = self.capacity - customer.demand
         self.nodes.append(customer)
 
@@ -57,8 +70,11 @@ class Route(object):
         return len(self.nodes) <= 1
 
     def hasNoCustomers(self):
-        return len(self.nodes) == 2
+        return len(self.nodes) == 2 
 
+    def hasCustomer(self):
+        return any(n.id.startswith('C') for n in self.nodes)
+    
     def clear(self):
         self.nodes.clear()
         self.nodes.append(self.depot)
