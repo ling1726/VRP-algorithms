@@ -1,15 +1,13 @@
 import argparse
 import os
 import subprocess
-from operator import itemgetter
 
 import graphviz as gv
 
 import NB.instance.instance as instance
-import NB.util as util
-from NB.Solution.route import Route
-from NB.construction_heuristic import _create_initial_routes, _calculate_savings, _get_routes
+from NB.construction_heuristic import construction_heuristic
 from NB.instance.instance import *
+from NB.neighbourhoods.SwapCustomersInter import SwapCustomersInter
 
 # Logger
 # logging.basicConfig(level=logging.ERROR)
@@ -89,53 +87,23 @@ def datareading(path):
     pass
 
 
-def construction_heuristic(blacklist):
-    # Here we will use savings criteria (paralell) for now. This might be switched afterwards
-    routes = _create_initial_routes()
-    savings = _calculate_savings(routes, blacklist)
-    routes = util._delete_only_charger_routes(routes)
-
-    savings.sort(key=itemgetter(2), reverse=True)
-    for sav in savings:
-        route1, route2 = _get_routes(sav, routes)
-        if route1 is None or route2 is None or route1 == route2:
-            continue
-        new_route = util._check_combination(route1.get_nodes() + route2.get_nodes())
-        if new_route:
-            routes.remove(route1)
-            routes.remove(route2)
-            new_route_object = Route(new_route)
-            routes.append(new_route_object)
-    logger.info("Final routes calculated")
-
-    for r in routes:
-        # TODO: check if route violates time windows!!
-        nodes = r.get_nodes()
-        if len(nodes) == 2 and type(nodes[0]) is Customer and type(nodes[1]) is Charger:
-            start_time = max(instance.getValDistanceMatrix(instance.depot, nodes[0]) * instance.averageVelocity,
-                             nodes[0].windowStart)
-            a = instance.getValDistanceMatrix(nodes[0], nodes[1]) * instance.averageVelocity
-            b = instance.getValDistanceMatrix(nodes[1], instance.depot) * instance.averageVelocity
-            endtime = start_time + nodes[0].serviceTime + a + b + nodes[1].load_time
-            if endtime > instance.depot.windowEnd:
-                print(instance.filename)
-                rev = list(reversed(nodes))
-                r.nodes = rev
-        r.update()
-    return routes
-
-
 def variable_neighbourhood_descent(solution):
-    neighbourhoods = []
+    neighbourhoods = [SwapCustomersInter()]
     current_best = solution
-    for i in range(len(neighbourhoods)):
+    i = 0
+    while i < len(neighbourhoods):
         neighbourhood = neighbourhoods[i]
-        tmp = sorted(neighbourhood.generate_neighbourhood(current_best), key=lambda x: x.cost)
-        if tmp.cost < current_best.cost:
-            current_best = tmp
-            i = 0
+        neighbourhood = neighbourhood.generate_neighbourhood(current_best)
+        i += 1
+        if neighbourhood:
+            tmp = sorted(neighbourhood, key=lambda x: x.cost)[0]
+            if tmp.cost < current_best.cost:
+                current_best = tmp
+                i = 0
+                print("Nasao bolje")
 
     return current_best
+
 
 def _visualize_solution(instance, solution):
     g1 = gv.Digraph(format='svg', engine="neato")
@@ -200,8 +168,8 @@ def startProgram(args):
         blacklist = preprocessing()
         solution = construction_heuristic(blacklist)
         solution = variable_neighbourhood_descent(solution)
-        _visualize_solution(instance, solution)
-        write_solution(solution)
+        _visualize_solution(instance, solution.routes)
+        write_solution(solution.routes)
 
 
 if __name__ == '__main__':

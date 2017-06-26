@@ -1,4 +1,7 @@
+from operator import itemgetter
+
 import NB.instance.instance as instance
+from NB.Solution.Solution import Solution
 from NB.Solution.route import Route
 from NB.instance.instance import *
 import NB.util as util
@@ -47,25 +50,6 @@ def _create_initial_routes():
     return routes
 
 
-# this assumes that every visit to any charger charges the vehicle fully and returns the maximum consumption of any part of this route between to chargers
-def _get_route_consumption(nodes):
-    last_charger = instance.depot
-    max_length = 0
-    part_route = []
-    for node in nodes:
-        if type(node) is Charger:
-            part_length = util.calculate_route_cost(part_route, start=last_charger, end=node)
-            if part_length > max_length:
-                max_length = part_length
-            part_route = []
-            last_charger = node
-        else:
-            part_route.append(node)
-    part_length = util.calculate_route_cost(part_route, start=last_charger, end=instance.depot)
-    if part_length > max_length:
-        max_length = part_length
-    return max_length * instance.fuelConsumptionRate
-
 
 def _calculate_savings(routes, blacklist):
     # savings are kept as list of tuples (first_node, second_node, savings_value) to be more easily sorted
@@ -106,3 +90,39 @@ def _get_routes(sav, routes):
     else:
         logger.debug("No route found")
         return (None, None)
+
+def construction_heuristic(blacklist):
+    # Here we will use savings criteria (paralell) for now. This might be switched afterwards
+    routes = _create_initial_routes()
+    savings = _calculate_savings(routes, blacklist)
+    routes = util._delete_only_charger_routes(routes)
+
+    savings.sort(key=itemgetter(2), reverse=True)
+    for sav in savings:
+        route1, route2 = _get_routes(sav, routes)
+        if route1 is None or route2 is None or route1 == route2:
+            continue
+        new_route = util.check_combination(route1.get_nodes() + route2.get_nodes())
+        if new_route:
+            routes.remove(route1)
+            routes.remove(route2)
+            new_route_object = Route(new_route)
+            routes.append(new_route_object)
+    logger.info("Final routes calculated")
+
+    for r in routes:
+        # TODO: check if route violates time windows!!
+        nodes = r.get_nodes()
+        if len(nodes) == 2 and type(nodes[0]) is Customer and type(nodes[1]) is Charger:
+            start_time = max(instance.getValDistanceMatrix(instance.depot, nodes[0]) * instance.averageVelocity,
+                             nodes[0].windowStart)
+            a = instance.getValDistanceMatrix(nodes[0], nodes[1]) * instance.averageVelocity
+            b = instance.getValDistanceMatrix(nodes[1], instance.depot) * instance.averageVelocity
+            endtime = start_time + nodes[0].serviceTime + a + b + nodes[1].load_time
+            if endtime > instance.depot.windowEnd:
+                print(instance.filename)
+                rev = list(reversed(nodes))
+                r.nodes = rev
+        r.update()
+
+    return Solution(routes)
