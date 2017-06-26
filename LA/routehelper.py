@@ -24,7 +24,7 @@ def closestCharger(node):
 def closestChargerBetweenTwoNodes(node1, node2):
     chargersWithoutS0 = [s for s in inst.chargers.values() if s.id != 'S0']
     return min(chargersWithoutS0, key=lambda x: _b(node1,x) + _b(x, node2))
-
+    
 def _sufficientTimeForCharging(route, node):
     if route.last() != node:
         route = _cp(route)

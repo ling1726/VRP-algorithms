@@ -14,19 +14,23 @@ class SimulatedAnnealing(object):
         self.neighborhood = neigh.SimpleNeighborhood()
         self.routes = routes #initial solution
         self.cost = cost # initial solution
-        self.T0 = 10
+        self.T0 = 5
         self.maxTries = 10000
 
     def  solve(self):
+        maxdelta = 0
         for t in range(sys.maxsize):
             T = self.schedule_boltzmann(t)
             if math.isclose(T, 0, abs_tol=0.0001) or t > self.maxTries: break
             newSolution = self.neighborhood.generate_neighbor(self.routes, self.cost)
             delta = newSolution["newTotalCost"] - self.cost
+            maxdelta = max(maxdelta, delta)
             if delta < 0 or random() < self.acceptance_probability(delta, T): # decide if the new solution should be used
                 self.routes[newSolution["chosenRoutesIndexes"][0]] = newSolution["chosenRoutes"][0]
                 self.routes[newSolution["chosenRoutesIndexes"][1]] = newSolution["chosenRoutes"][1]
                 self.cost = newSolution["newTotalCost"]
+        print(self.neighborhood)
+        print(maxdelta)
         return self
 
     def schedule(self, t):
