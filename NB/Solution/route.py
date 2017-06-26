@@ -2,7 +2,7 @@
 import NB.instance.instance as instance
 import math
 from NB import util
-
+import copy
 
 class Route(object):
     def __init__(self, init_nodes=[]):
@@ -24,22 +24,29 @@ class Route(object):
 
     def remove_node(self, node):
         self.nodes.remove(node)
-        self.start = self.nodes[0]
-        self.end = self.nodes[-1]
+        if self.nodes:
+            self.start = self.nodes[0]
+            self.end = self.nodes[-1]
+        else:
+            self.start = None
+            self.end = None
 
     def calc_cost(self):
         return util.calculate_route_cost(self.nodes,instance.depot, instance.depot)
 
     def add_node_at_best(self, new_node):
+
+        if not self.nodes:
+            self.nodes.append(new_node)
+            return
         # Tupel saving the index of the minimum cost of inserting a customer at that index AND the minimum cost
-        mincost = (None, math.inf)
+        mincost = (None, -1)
         for i in range(len(self.nodes)):
             nodes_c = self.nodes[:]
             nodes_c.insert(i, new_node)
-            new_cost = util.calculate_route_cost(nodes_c)
-            if mincost[1] > new_cost:
-                mincost[1] = new_cost
-                mincost[0] = i
+            new_cost = util.calculate_route_cost(nodes_c, instance.depot, instance.depot)
+            if mincost[1] == -1 or mincost[1] < new_cost:
+                mincost = (i , new_cost)
         self.nodes.insert(mincost[0], new_node)
 
     def update(self):
@@ -48,10 +55,16 @@ class Route(object):
         :return:
         """
         self.cost = self.calc_cost()
-        self.weight_point = util.calculate_weight_point()
+        self.weight_point = util.calculate_weight_point(self)
 
     def get_nodes(self):
-        return self.nodes[:]
+        return self.nodes
+
+    def clone(self):
+        cloned = Route(self.nodes)
+        cloned.cost = self.cost
+        cloned.weight_point = self.weight_point
+        return cloned
 
     def __str__(self):
         return str([str(i) for i in self.nodes])

@@ -9,12 +9,30 @@ def calculate_route_cost(route, start=instance.depot, end=instance.depot):
         return cost
 
     cost += instance.getValDistanceMatrix(start, route[0])
-    for i in range(len(route)-1):
-        cost += instance.getValDistanceMatrix(route[i], route[i+1])
+    for i in range(len(route) - 1):
+        cost += instance.getValDistanceMatrix(route[i], route[i + 1])
     cost += instance.getValDistanceMatrix(route[-1], end)
     return cost
 
-def _check_combination(test_route):
+
+def get_farthest_customer(route):
+    farthest_node = None
+    farthest_dist = -1
+
+    for node in route.nodes:
+        if type(node) is Customer:
+            dist = math.hypot(route.weight_point[0] - node.x, route.weight_point[1] - node.y)
+            if dist > farthest_dist:
+                farthest_dist = dist
+                farthest_node = node
+    return farthest_node
+
+
+def calculate_weight_point(route):
+    return sum([node.x for node in route.nodes]) / len(route.nodes), sum([node.y for node in route.nodes]) / len(route.nodes)
+
+
+def check_combination(test_route):
     # Here we need to check if this solution is feasible
     # For now we just the newly created route and calculate the consumption, capacity etc...
     # There might be a better way to do this
@@ -72,6 +90,7 @@ def _check_combination(test_route):
         del test_route[-1]
     return test_route
 
+
 def _find_nearest_charger(node):
     min_distance = math.inf
     min_charger = None
@@ -81,6 +100,25 @@ def _find_nearest_charger(node):
             min_distance = this_distance
             min_charger = charger
     return min_charger
+
+# this assumes that every visit to any charger charges the vehicle fully and returns the maximum consumption of any part of this route between to chargers
+def _get_route_consumption(nodes):
+    last_charger = instance.depot
+    max_length = 0
+    part_route = []
+    for node in nodes:
+        if type(node) is Charger:
+            part_length = calculate_route_cost(part_route, start=last_charger, end=node)
+            if part_length > max_length:
+                max_length = part_length
+            part_route = []
+            last_charger = node
+        else:
+            part_route.append(node)
+    part_length = calculate_route_cost(part_route, start=last_charger, end=instance.depot)
+    if part_length > max_length:
+        max_length = part_length
+    return max_length * instance.fuelConsumptionRate
 
 
 
@@ -100,34 +138,37 @@ def _add_charger(test_route, charger_index, use_heurisitic):
         charger_temp = charger_org.generate_clone()
         # insert charger
         tmp_route.insert(i + 1, charger_temp)
-        feasible_insertion = instance.fuelCapacity >= _get_route_consumption(tmp_route[:charger_index + 2]) * instance.fuelConsumptionRate
+        feasible_insertion = instance.fuelCapacity >= _get_route_consumption(
+            tmp_route[:charger_index + 2]) * instance.fuelConsumptionRate
         if feasible_insertion:
             break
-        del tmp_route[i+1]
+        del tmp_route[i + 1]
 
     # if feasible insertion is not found or it is depot or it is charger right before the depot
-    if charger_org and charger_org.equal_to(instance.depot):# or type(tmp_route[-2]) is Charger :
-         tmp_route = []
+    if charger_org and charger_org.equal_to(instance.depot):  # or type(tmp_route[-2]) is Charger :
+        tmp_route = []
     elif not feasible_insertion and use_heurisitic:
-        #heurisic insertion
-         edge = _most_consuming_edge(tmp_route[:charger_index + 1])
-         nearest_charger = _nearest_charger(tmp_route[edge[0]], tmp_route[edge[1]]).generate_clone()
-         #nearest_charger = _find_nearest_charger(tmp_route[edge[0]])
-         tmp_route.insert(edge[1],nearest_charger)
+        # heurisic insertion
+        edge = _most_consuming_edge(tmp_route[:charger_index + 1])
+        nearest_charger = _nearest_charger(tmp_route[edge[0]], tmp_route[edge[1]]).generate_clone()
+        # nearest_charger = _find_nearest_charger(tmp_route[edge[0]])
+        tmp_route.insert(edge[1], nearest_charger)
     elif not feasible_insertion and tmp_route == test_route:
         tmp_route = []
 
     return tmp_route
 
+
 def _most_consuming_edge(route):
     max_dist = 0
     node_indexes = None
-    for i in range(len(route)-1):
-        temp_dist = instance.getValDistanceMatrix(route[i], route[i+1])
+    for i in range(len(route) - 1):
+        temp_dist = instance.getValDistanceMatrix(route[i], route[i + 1])
         if temp_dist > max_dist:
             max_dist = temp_dist
-            node_indexes = (i, i+1)
+            node_indexes = (i, i + 1)
     return node_indexes
+
 
 def _nearest_charger(node1, node2):
     min_dist = None
@@ -143,11 +184,12 @@ def _nearest_charger(node1, node2):
             min_charger = charger
     return min_charger
 
+
 def _make_fuel_consumption_feasible(test_route, use_heuristic=True):
     # for testing, we add the depots
     test_route.insert(0, instance.depot)
     test_route.append(instance.depot)
-     # fuel consumption test, INCLUDING Insertion of Chargers where necessary (If possible)
+    # fuel consumption test, INCLUDING Insertion of Chargers where necessary (If possible)
     i = 0
     current_fuel = instance.fuelCapacity
     while i < len(test_route) - 1:
@@ -172,6 +214,7 @@ def _make_fuel_consumption_feasible(test_route, use_heuristic=True):
             i += 1
 
     return test_route
+
 
 def _delete_only_charger_routes(routes):
     tmp_routes = routes[:]
