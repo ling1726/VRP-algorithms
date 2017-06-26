@@ -18,3 +18,8 @@ class Node(object):
 
     def __repr__(self):
         return self.id
+    def __eq__(self, other):
+        if type(self) != type(other):
+            return False
+        else:
+            return self.id.__eq__(other.id)
