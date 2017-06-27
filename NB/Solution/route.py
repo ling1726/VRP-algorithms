@@ -8,7 +8,6 @@ from NB.instance.customer import Customer
 
 class Route(object):
     def __init__(self, init_nodes=[]):
-
         self.nodes = copy.deepcopy(init_nodes)
         if len(init_nodes) > 0:
             self.start = init_nodes[0]

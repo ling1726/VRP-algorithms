@@ -7,6 +7,7 @@ import graphviz as gv
 import NB.instance.instance as instance
 from NB.construction_heuristic import construction_heuristic
 from NB.instance.instance import *
+from NB.neighbourhoods.CustomerInsertionIntra import CustomerInsertionIntra
 from NB.neighbourhoods.CustomerRelocateInter import CustomerRelocateInter
 from NB.neighbourhoods.SwapCustomersInter import SwapCustomersInter
 
@@ -89,7 +90,7 @@ def datareading(path):
 
 
 def variable_neighbourhood_descent(solution):
-    neighbourhoods = [CustomerRelocateInter(), SwapCustomersInter()]
+    neighbourhoods = [CustomerInsertionIntra(),CustomerRelocateInter(), SwapCustomersInter()]
     current_best = solution
     i = 0
     while i < len(neighbourhoods):
@@ -100,6 +101,7 @@ def variable_neighbourhood_descent(solution):
             tmp = sorted(neighbourhood, key=lambda x: x.cost)[0]
             if tmp.cost < current_best.cost:
                 print("Found better for:", current_best.cost - tmp.cost)
+                print("---------------------------------------------------")
                 current_best = tmp
                 i = 0
 
@@ -154,8 +156,8 @@ def write_solution(solution):
 
         p2 = subprocess.check_output(
             ['java', '-jar', '../data/verifier/EVRPTWVerifier.jar', '-d', instance.filename, tempFile])
-        print(p2)
-        # os.remove(tempFile)
+        #print(p2)
+        os.remove(tempFile)
 
 
 def startProgram(args):

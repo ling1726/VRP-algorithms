@@ -23,8 +23,8 @@ class SwapCustomersInter(Neighbourhood):
                 # remove node from one route, add on rand index to other
                 route1 = neighbour.routes[i]
                 route1.remove_node(farthest_customers[i])
-                #route1.add_node_at(farthest_customers[j], random.randint(0, len(route1.nodes)))
-                route1.add_node_at_best(farthest_customers[j])
+                route1.add_node_at(farthest_customers[j], random.randint(0, len(route1.nodes)))
+                #route1.add_node_at_best(farthest_customers[j])
                 checked = util.check_combination(route1.nodes)
                 # combination is not feasible
                 if not checked:
@@ -34,15 +34,15 @@ class SwapCustomersInter(Neighbourhood):
 
                 route2 = neighbour.routes[j]
                 route2.remove_node(farthest_customers[j])
-                #route2.add_node_at(farthest_customers[i], random.randint(0, len(route2.nodes)))
-                route2.add_node_at_best(farthest_customers[i])
+                route2.add_node_at(farthest_customers[i], random.randint(0, len(route2.nodes)))
+                #route2.add_node_at_best(farthest_customers[i])
                 checked = util.check_combination(route2.nodes)
                 # combination is not feasible
                 if not checked:
                     continue
                 route2.nodes = checked
                 route2.update()
-                print("managed to do swap")
+                print("managed to do swap","neigbourhood 3")
                 neighbour.update_cost()
                 neighbourhood.append(neighbour)
 

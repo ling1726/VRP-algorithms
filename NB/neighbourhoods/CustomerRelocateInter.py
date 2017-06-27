@@ -16,6 +16,8 @@ class CustomerRelocateInter(Neighbourhood):
         farthest_customers = [util.get_farthest_customer(route) for route in x.routes]
         neighbourhood = []
         for i in range(len(farthest_customers)):
+            if len(x.routes[i].nodes) < 3:
+                continue
             neighbour_removed = x.clone()
             # remove node from one route, and insert to all others
             route1 = neighbour_removed.routes[i]
@@ -24,18 +26,18 @@ class CustomerRelocateInter(Neighbourhood):
                 neighbour = neighbour_removed.clone()
                 extended_route = neighbour.routes[j]
                 extended_route.add_node_at(farthest_customers[i], random.randint(0, len(extended_route.nodes)))
-                #extended_route.add_node_at_best(farthest_customers[i])
+                # extended_route.add_node_at_best(farthest_customers[i])
                 checked = util.check_combination(extended_route.nodes)
                 # combination is not feasible
                 if not checked:
                     continue
-                print("managed insertion")
+                print("managed insertion INTER", "neigbourhood 2")
                 extended_route.nodes = checked
                 extended_route.update()
 
                 neighbour.update_cost()
                 neighbourhood.append(neighbour)
-            #insert it as new route
+            # insert it as new route
             new_route = Route([farthest_customers[i]])
             checked = util.make_fuel_consumption_feasible(new_route.nodes)
             new_route.nodes = checked
@@ -43,6 +45,5 @@ class CustomerRelocateInter(Neighbourhood):
 
             neighbour_removed.update_cost()
             neighbour_removed.add_route(new_route)
-
 
         return neighbourhood
