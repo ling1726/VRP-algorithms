@@ -23,12 +23,20 @@ def cost_n(nodes):
 
 def closestCharger(node):
     return min(inst.chargers.values(), key=lambda x: _b(node, x))
-
+"""
 def closestChargerBetweenTwoNodes(node1, node2):
     return min(chargersWithoutS0, key=lambda x: _b(node1,x) + _b(x, node2))
+"""
+def closestChargerBetweenTwoNodes(node1, node2):
+    charger = min(chargersWithoutS0, key=lambda x: _b(node1,x) + _b(x, node2))
+    cost = _b(node1,charger) + _b(charger, node2)
+    return charger,cost
 
 def minCostCharger(node1, node2):
-        return closestChargers[(node1.id,node2.id)]
+    return closestChargers[(node1.id,node2.id)][0]
+
+def chargerCostTuple(node1,node2):
+    return closestChargers[(node1.id,node2.id)]
 
 def _sufficientTimeForCharging(route, node):
     if route.last() != node:

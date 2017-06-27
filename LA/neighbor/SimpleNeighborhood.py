@@ -5,20 +5,19 @@ import twhelper as tw
 import routehelper as rh
 import random
 from numpy.random import choice
-import numpy.random
 
-from copy import deepcopy
 class SimpleNeighborhood(object):
 
     def __init__(self):
         pass
 
     def generate_neighbor(self, routes, cost):        
-        cost -= self.removeRoutesWithoutCustomers(routes)
+        cost -= self.removeRoutesWithoutCustomers(routes) #This is unecessarily expensive
         chosenRouteIndexes = random.sample(range(0, len(routes)), 2)        
         chosenRoutes = [self._cp(routes[chosenRouteIndexes[0]]), self._cp(routes[chosenRouteIndexes[1]])]
         initialCost = chosenRoutes[0].getCost() + chosenRoutes[1].getCost() # previous cost of the two routes
-        newCost = choice([self.relocation, self.crossover, self.exchange, self.orExchange, self.twoExchange],p=[0.5,0.0,0.0,0.5,0])(chosenRoutes, initialCost)
+        #newCost = choice([self.relocation, self.crossover, self.exchange, self.orExchange, self.twoExchange],p=[0.5,0.15,0.1,0.15,0.1])(chosenRoutes, initialCost)
+        newCost = choice([self.relocation, self.crossover, self.exchange, self.orExchange, self.twoExchange, self.chargerSwap],p=[0.35,0.15,0.1,0.25,0.1,0.05])(chosenRoutes, initialCost)
         newTotalCost = cost - initialCost + newCost
         return {"chosenRoutesIndexes": chosenRouteIndexes, "chosenRoutes": chosenRoutes, "newTotalCost": newTotalCost }
 
@@ -123,6 +122,34 @@ class SimpleNeighborhood(object):
             return True
         return False
 
+
+    def chargerSwap(self, chosenRoutes, initialCost):
+        for i in range(1,len(chosenRoutes[0].nodes)-1):
+            if chosenRoutes[0].nodes[i].id.startswith("S"):
+                success = self.doChargerSwap(chosenRoutes, i)
+                if success: return chosenRoutes[0].getCost() + chosenRoutes[1].getCost()
+        return initialCost
+    
+    def doChargerSwap(self, chosenRoutes, i):
+        nodes = chosenRoutes[0].nodes
+        charger = nodes[i]
+        currentCost = rh.chargerCostTuple(nodes[i-1],nodes[i+1])[1]
+        rw = nodes[:i] + nodes[i+1:]
+        options = []
+        if i > 1:
+            pre = rh.chargerCostTuple(nodes[i-2],nodes[i-1])
+            if currentCost > pre[1] and tw.feasible(rw[:i-1] + [pre[0]] + rw[i-1:]):
+                options.append((pre[0], pre[1], i-1))
+        if i < len(nodes) - 2: 
+            post = rh.chargerCostTuple(nodes[i+1],nodes[i+2])
+            if currentCost > post[1] and tw.feasible(rw[:i+2] + [post[0]] + rw[i+2:]):
+                options.append((post[0], post[1], i+2))
+        if options == []: return False
+        chosenCharger = min(options, key= lambda x: x[1])
+        chosenRoutes[0].remove_at(i)
+        chosenRoutes[0].insert_at(chosenCharger[2], chosenCharger[0])
+        return True
+
     """
     def rollbackMove(self, chosenRoutes, initialRoutes):
         chosenRoutes[0].clear()
@@ -137,8 +164,7 @@ class SimpleNeighborhood(object):
         shuffled = list(sequence)
         random.shuffle(shuffled)
         return iter(shuffled)
-        
-    #Do this only once at the end?
+
     def removeRoutesWithoutCustomers(self, routes):
         costReduction = 0
         for i in reversed(range(len(routes))):
@@ -146,7 +172,7 @@ class SimpleNeighborhood(object):
                 costReduction += routes[i].getCost()
                 del routes[i]
         return costReduction
-    
+
     def _is_charger(self, chosenRoutes, i, j):
         return chosenRoutes[0].nodes[i].id.startswith("S") or chosenRoutes[1].nodes[j].id.startswith("S")
     
