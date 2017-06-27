@@ -29,6 +29,7 @@ class SwapCustomersInter(Neighbourhood):
                 # combination is not feasible
                 if not checked:
                     continue
+                route1.nodes = checked
                 route1.update()
 
                 route2 = neighbour.routes[j]
@@ -39,30 +40,10 @@ class SwapCustomersInter(Neighbourhood):
                 # combination is not feasible
                 if not checked:
                     continue
+                route2.nodes = checked
                 route2.update()
-
+                print("managed to do swap")
                 neighbour.update_cost()
                 neighbourhood.append(neighbour)
-
-        #swaping with nothing
-        for i in range(len(farthest_customers)):
-            neighbour = x.clone()
-            route1 = neighbour.routes[i]
-            route1.remove_node(farthest_customers[i])
-
-            new_route = Route([farthest_customers[i]])
-            checked = util.check_combination(new_route.get_nodes())
-            if not checked:
-                continue
-
-            if not route1.nodes:
-                del neighbour.routes[i]
-            else:
-                route1.update()
-            new_route.update()
-
-            neighbour.add_route(new_route)
-            neighbour.update_cost()
-            neighbourhood.append(neighbour)
 
         return neighbourhood

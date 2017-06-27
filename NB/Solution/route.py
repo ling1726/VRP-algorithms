@@ -1,13 +1,15 @@
 # Object representation of a route
 import NB.instance.instance as instance
-import math
 from NB import util
 import copy
+
+from NB.instance.customer import Customer
+
 
 class Route(object):
     def __init__(self, init_nodes=[]):
 
-        self.nodes = init_nodes[:]
+        self.nodes = copy.deepcopy(init_nodes)
         if len(init_nodes) > 0:
             self.start = init_nodes[0]
             self.end = init_nodes[-1]
@@ -32,7 +34,7 @@ class Route(object):
             self.end = None
 
     def calc_cost(self):
-        return util.calculate_route_cost(self.nodes,instance.depot, instance.depot)
+        return util.calculate_route_cost(self.nodes, instance.depot, instance.depot)
 
     def add_node_at_best(self, new_node):
 
@@ -46,7 +48,7 @@ class Route(object):
             nodes_c.insert(i, new_node)
             new_cost = util.calculate_route_cost(nodes_c, instance.depot, instance.depot)
             if mincost[1] == -1 or mincost[1] < new_cost:
-                mincost = (i , new_cost)
+                mincost = (i, new_cost)
         self.nodes.insert(mincost[0], new_node)
 
     def update(self):
@@ -61,11 +63,14 @@ class Route(object):
         return self.nodes
 
     def clone(self):
-        cloned = Route(self.nodes)
+        nodes = []
+        for node in self.nodes:
+                if type(node) is Customer:
+                    nodes.append(node)
+        cloned = Route(nodes)
         cloned.cost = self.cost
         cloned.weight_point = self.weight_point
         return cloned
 
     def __str__(self):
         return str([str(i) for i in self.nodes])
-

@@ -17,7 +17,6 @@ class Solution(object):
 
     def add_route(self, route):
         self.routes.append(route)
-        self.calc_cost()
 
     def update_cost(self):
         self.cost = self.calc_cost()
@@ -28,12 +27,7 @@ class Solution(object):
     def clone(self):
         new_routes = []
         for route in self.routes:
-            new_route = []
-            for node in route.nodes:
-                if type(node) is Customer:
-                    new_route.append(copy.deepcopy(node))
-            new_route = route.clone()
-            new_routes.append(new_route)
+            new_routes.append(route.clone())
 
         return Solution(new_routes)
 

@@ -36,7 +36,7 @@ def check_combination(test_route):
     # Here we need to check if this solution is feasible
     # For now we just the newly created route and calculate the consumption, capacity etc...
     # There might be a better way to do this
-    test_route = _make_fuel_consumption_feasible(test_route)
+    test_route = make_fuel_consumption_feasible(test_route)
     current_capacity = 0
     current_time = 0
 
@@ -185,7 +185,7 @@ def _nearest_charger(node1, node2):
     return min_charger
 
 
-def _make_fuel_consumption_feasible(test_route, use_heuristic=True):
+def make_fuel_consumption_feasible(test_route, use_heuristic=True):
     # for testing, we add the depots
     test_route.insert(0, instance.depot)
     test_route.append(instance.depot)

@@ -39,7 +39,7 @@ def _create_initial_routes():
 
         current_fuel = instance.fuelCapacity - instance.getValDistanceMatrix(instance.depot, route[0])
         for i in range(len(route)-1):'''
-        new_route = util._make_fuel_consumption_feasible([node], True)
+        new_route = util.make_fuel_consumption_feasible([node], True)
         new_route.pop()
         new_route.pop(0)
         route = Route(new_route)
