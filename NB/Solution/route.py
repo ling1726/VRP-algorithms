@@ -58,14 +58,22 @@ class Route(object):
         self.cost = self.calc_cost()
         self.weight_point = util.calculate_weight_point(self)
 
+    def strip_chargers(self):
+        nodes = []
+        for node in self.nodes:
+            if type(node) is Customer:
+                nodes.append(node)
+        return nodes
+
+
     def get_nodes(self):
         return self.nodes
 
     def clone(self):
         nodes = []
         for node in self.nodes:
-                if type(node) is Customer:
-                    nodes.append(node)
+            #if type(node) is Customer:
+                nodes.append(node)
         cloned = Route(nodes)
         cloned.cost = self.cost
         cloned.weight_point = self.weight_point

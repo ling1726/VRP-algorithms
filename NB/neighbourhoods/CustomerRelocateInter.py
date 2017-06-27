@@ -25,6 +25,7 @@ class CustomerRelocateInter(Neighbourhood):
             for j in range(len(x.routes)):
                 neighbour = neighbour_removed.clone()
                 extended_route = neighbour.routes[j]
+                extended_route = Route(extended_route.strip_chargers())
                 extended_route.add_node_at(farthest_customers[i], random.randint(0, len(extended_route.nodes)))
                 # extended_route.add_node_at_best(farthest_customers[i])
                 checked = util.check_combination(extended_route.nodes)

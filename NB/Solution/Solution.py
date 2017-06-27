@@ -21,7 +21,7 @@ class Solution(object):
     def update_cost(self):
         self.cost = self.calc_cost()
 
-    def get_cost(self):  #
+    def get_cost(self):
         return self.cost
 
     def clone(self):

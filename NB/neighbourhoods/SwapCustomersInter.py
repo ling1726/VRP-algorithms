@@ -22,6 +22,7 @@ class SwapCustomersInter(Neighbourhood):
                 neighbour = x.clone()
                 # remove node from one route, add on rand index to other
                 route1 = neighbour.routes[i]
+                route1 = Route(route1.strip_chargers())
                 route1.remove_node(farthest_customers[i])
                 route1.add_node_at(farthest_customers[j], random.randint(0, len(route1.nodes)))
                 #route1.add_node_at_best(farthest_customers[j])
@@ -33,6 +34,7 @@ class SwapCustomersInter(Neighbourhood):
                 route1.update()
 
                 route2 = neighbour.routes[j]
+                route2 = Route(route2.strip_chargers())
                 route2.remove_node(farthest_customers[j])
                 route2.add_node_at(farthest_customers[i], random.randint(0, len(route2.nodes)))
                 #route2.add_node_at_best(farthest_customers[i])
@@ -45,5 +47,4 @@ class SwapCustomersInter(Neighbourhood):
                 print("managed to do swap","neigbourhood 3")
                 neighbour.update_cost()
                 neighbourhood.append(neighbour)
-
         return neighbourhood

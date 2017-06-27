@@ -156,15 +156,18 @@ def write_solution(solution):
 
         p2 = subprocess.check_output(
             ['java', '-jar', '../data/verifier/EVRPTWVerifier.jar', '-d', instance.filename, tempFile])
-        #print(p2)
+        rf = open("resulting.txt", "a")
+        rf.write(str(p2) + "\n")
+        rf.close()
+        print(p2[-13:-2])
         os.remove(tempFile)
 
 
 def startProgram(args):
     fold = "../data/instances"
     for file_parse in os.listdir(fold):
-        # for i in range(0,1):
-        #     file_parse = "rc106_21.txt"
+    #for i in range(0,1):
+        #file_parse = "rc106_21.txt"
         if file_parse.startswith(".") or file_parse.endswith("sol"):
             continue
         datareading(file_parse)
