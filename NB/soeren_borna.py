@@ -7,6 +7,7 @@ import graphviz as gv
 import NB.instance.instance as instance
 from NB.construction_heuristic import construction_heuristic
 from NB.instance.instance import *
+from NB.neighbourhoods.CustomerRelocateInter import CustomerRelocateInter
 from NB.neighbourhoods.SwapCustomersInter import SwapCustomersInter
 
 # Logger
@@ -88,7 +89,7 @@ def datareading(path):
 
 
 def variable_neighbourhood_descent(solution):
-    neighbourhoods = [SwapCustomersInter()]
+    neighbourhoods = [CustomerRelocateInter(), SwapCustomersInter()]
     current_best = solution
     i = 0
     while i < len(neighbourhoods):
@@ -98,9 +99,9 @@ def variable_neighbourhood_descent(solution):
         if neighbourhood:
             tmp = sorted(neighbourhood, key=lambda x: x.cost)[0]
             if tmp.cost < current_best.cost:
+                print("Found better for:", current_best.cost - tmp.cost)
                 current_best = tmp
                 i = 0
-                print("Nasao bolje")
 
     return current_best
 
@@ -165,7 +166,8 @@ def startProgram(args):
         if file_parse.startswith(".") or file_parse.endswith("sol"):
             continue
         datareading(file_parse)
-        blacklist = preprocessing()
+        # blacklist = preprocessing()
+        blacklist = []
         solution = construction_heuristic(blacklist)
         solution = variable_neighbourhood_descent(solution)
         _visualize_solution(instance, solution.routes)
