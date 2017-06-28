@@ -19,7 +19,7 @@ class CustomerInsertionIntra(Neighbourhood):
             # pick random cutomer
             route_removed_customer = Route(route_removed_customer.strip_chargers())
             neighbour.routes[i] = route_removed_customer
-            customer = route_removed_customer.nodes[random.randint(0, len(route_removed_customer.nodes)- 1)]
+            customer = route_removed_customer.nodes[random.randint(0, len(route_removed_customer.nodes) - 1)]
             # remove customer from the route
             route_removed_customer.remove_node(customer)
 
