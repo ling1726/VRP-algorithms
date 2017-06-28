@@ -27,6 +27,21 @@ def get_farthest_customer(route):
                 farthest_node = node
     return farthest_node
 
+def check_violates_tw(routes):
+    for r in routes:
+        # TODO: check if route violates time windows!!
+        nodes = r.get_nodes()
+        if len(nodes) == 2 and type(nodes[0]) is Customer and type(nodes[1]) is Charger:
+            start_time = max(instance.getValDistanceMatrix(instance.depot, nodes[0]) * instance.averageVelocity,
+                             nodes[0].windowStart)
+            a = instance.getValDistanceMatrix(nodes[0], nodes[1]) * instance.averageVelocity
+            b = instance.getValDistanceMatrix(nodes[1], instance.depot) * instance.averageVelocity
+            endtime = start_time + nodes[0].serviceTime + a + b + nodes[1].load_time
+            if endtime > instance.depot.windowEnd:
+                print(instance.filename)
+                rev = list(reversed(nodes))
+                r.nodes = rev
+        r.update()
 
 def get_longest_waiting_customer(route):
     longest_node = None

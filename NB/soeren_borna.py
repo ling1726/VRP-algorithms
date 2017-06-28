@@ -105,7 +105,7 @@ def variable_neighbourhood_search(solution):
             tmp = variable_neighbourhood_descent(tmp)
             k += 1
             if tmp.cost < current_best.cost:
-                print("VNS Found better for:", current_best.cost - tmp.cost)
+                print("VNS Found better for:", current_best.cost - tmp.cost, "in neighbourhood", k)
                 print("---------------------------------------------------")
                 current_best = tmp
                 k = 0
@@ -113,11 +113,15 @@ def variable_neighbourhood_search(solution):
         if current_best.cost < best_all.cost:
             best_all = current_best
         print("-----------------END OF ITERATION------------------")
+
+    util.check_violates_tw(best_all.routes)
+    best_all.update_cost()
     return best_all
 
 
 def variable_neighbourhood_descent(solution):
-    neighbourhoods = [CustomerInsertionIntra(), CustomerRelocateInter(util.get_farthest_customer), SwapCustomersInter(util.get_farthest_customer)]
+    neighbourhoods = [CustomerInsertionIntra(), CustomerRelocateInter(util.get_farthest_customer),
+                      SwapCustomersInter(util.get_farthest_customer)]
     current_best = solution
     i = 0
     while i < len(neighbourhoods):
@@ -161,18 +165,19 @@ def _visualize_solution(instance, solution):
     filename = g1.render(filename='img/' + instance.filename)
 
 
-def write_solution(solution):
-    total_cost = 0
-    for s in solution:
-        total_cost += s.calc_cost()
+def write_solution(solution, file_parse, constr_sol, time_ex):
     print(instance.filename)
-    print(total_cost)
+    print(solution.cost)
     print()
+    rf = open("results.csv", "a")
+    rf.write(file_parse + "," + str(constr_sol.cost) + "," + str(solution.cost) + "," + str(
+        100 * (constr_sol.cost - solution.cost) / constr_sol.cost) + "," + str(time_ex) + "\n")
+    rf.close()
     if args.verify:
         tempFile = instance.filename + '.sol'
         f = open(tempFile, mode='w')
-        f.write(str(round(total_cost, 3)) + "\n")
-        for r in solution:
+        f.write(str(round(solution.cost, 3)) + "\n")
+        for r in solution.routes:
             sol_line = "D0, "
             for c in r.get_nodes():
                 sol_line += str(c).split("_")[0]
@@ -190,21 +195,41 @@ def write_solution(solution):
         os.remove(tempFile)
 
 
+import time
+
+import re
+
+
+def check_string(file_parse):
+    with open("results.csv") as f:
+        found = False
+        for line in f:  # iterate over the file one line at a time(memory efficient)
+            if re.search("{0}".format(file_parse), line):  # if string found is in current line then print it
+                found = True
+    return found
+
+
 def startProgram(args):
     fold = "../data/instances"
     for file_parse in os.listdir(fold):
         # for i in range(0,1):
         # file_parse = "rc106_21.txt"
-        if file_parse.startswith(".") or file_parse.endswith("sol"):
+        if file_parse.startswith(".") or file_parse.endswith(
+                "sol") or check_string(file_parse):
+            print("skipped",file_parse)
             continue
+        print("started", file_parse)
         datareading(file_parse)
         # blacklist = preprocessing()
         blacklist = []
         solution_constr = construction_heuristic(blacklist)
+        start = time.time()
         solution = variable_neighbourhood_search(solution_constr)
-        print("Construction heuristic:",solution.cost," metha better for:", solution_constr.cost - solution.cost)
-        #_visualize_solution(instance, solution.routes)
-        write_solution(solution.routes)
+        end = time.time()
+        print("Construction heuristic:", solution.cost, " metha better for:", solution_constr.cost - solution.cost,
+              "time :", end - start)
+        _visualize_solution(instance, solution.routes)
+        write_solution(solution, file_parse, solution_constr, end - start)
 
 
 if __name__ == '__main__':
