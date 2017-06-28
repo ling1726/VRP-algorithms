@@ -5,151 +5,152 @@ import twhelper as tw
 import routehelper as rh
 import random
 from numpy.random import choice
-import numpy.random
+
 class SimpleNeighborhood(object):
 
     def __init__(self):
-        #random.seed(10)#pass
-        #numpy.random.seed(10)
-        self.n1 = 0
-        self.n2 = 0
-        self.n3 = 0
-        self.n4 = 0
-        self.n5 = 0
-        self.tot = 0
-        self.overall = 0
+        pass
 
     def generate_neighbor(self, routes, cost):        
-        cost -= self.removeRoutesWithoutCustomers(routes)
+        cost -= self.removeRoutesWithoutCustomers(routes) #This is unecessarily expensive
         chosenRouteIndexes = random.sample(range(0, len(routes)), 2)        
         chosenRoutes = [self._cp(routes[chosenRouteIndexes[0]]), self._cp(routes[chosenRouteIndexes[1]])]
         initialCost = chosenRoutes[0].getCost() + chosenRoutes[1].getCost() # previous cost of the two routes
-        newCost = choice([self.relocation, self.crossover, self.exchange, self.orExchange, self.twoExchange],p=[0.3,0.15,0.15,0.25,0.15])(chosenRoutes, initialCost)
+        #newCost = choice([self.relocation, self.crossover, self.exchange, self.orExchange, self.twoExchange],p=[0.5,0.15,0.1,0.15,0.1])(chosenRoutes, initialCost)
+        newCost = choice([self.relocation, self.crossover, self.exchange, self.orExchange, self.twoExchange, self.chargerSwap],p=[0.35,0.15,0.1,0.25,0.1,0.05])(chosenRoutes, initialCost)
         newTotalCost = cost - initialCost + newCost
-        if newCost == initialCost: self.tot += 1
-        self.overall += 1
         return {"chosenRoutesIndexes": chosenRouteIndexes, "chosenRoutes": chosenRoutes, "newTotalCost": newTotalCost }
 
-    def twoExchange(self, chosenRoutes, initialCost): 
-        initialRoutes = self._cp(chosenRoutes)
+    def twoExchange(self, chosenRoutes, initialCost):
         for i in range(1, len(chosenRoutes[0].nodes)-2):#for i in self.randomly(range(1, len(chosenRoutes[0].nodes)-2)):
             for j in self.randomly(range(i+1, len(chosenRoutes[0].nodes)-1)):
                 success = self.doTwoExchange(chosenRoutes, i,j)
-                newCost = chosenRoutes[0].getCost() + chosenRoutes[1].getCost()
-                feasible = tw.feasible(chosenRoutes[0].nodes) and tw.feasible(chosenRoutes[1].nodes)
-                if feasible and success: return newCost
-                self.rollbackMove(chosenRoutes, initialRoutes)
-        self.n5 += 1
+                if success: return chosenRoutes[0].getCost() + chosenRoutes[1].getCost() 
         return initialCost
     
     def doTwoExchange(self, chosenRoutes, i, j):
         if chosenRoutes[0].nodes[i].id.startswith('S') or chosenRoutes[0].nodes[j].id.startswith('S'): return False
-        a = chosenRoutes[0].nodes[:i+1] #from start to i
-        b = chosenRoutes[0].nodes[i+1:j+1] #from i+1 to j
-        c = chosenRoutes[0].nodes[j+1:] #from j+1 to end
-        if chosenRoutes[0].nodes == a + b[::-1] + c: return False
-        chosenRoutes[0].nodes[:] = a + b[::-1] + c
+        r = chosenRoutes[0].nodes[:i+1] + chosenRoutes[0].nodes[i+1:j+1][::-1] + chosenRoutes[0].nodes[j+1:]
+        if chosenRoutes[0].nodes == r or not tw.feasible(r): return False
+        chosenRoutes[0].nodes[:] = r[:]
         chosenRoutes[0].distance = rh.cost(chosenRoutes[0])
         return True
 
     def exchange(self, chosenRoutes, initialCost):
-        initialRoutes = self._cp(chosenRoutes)
+        randomizedR1 = self.randomly(range(1, len(chosenRoutes[1].nodes)-1))
         for i in self.randomly(range(1, len(chosenRoutes[0].nodes)-1)):
-            for j in self.randomly(range(1, len(chosenRoutes[1].nodes)-1)):
+            for j in randomizedR1:
                 success = self.doExchange(chosenRoutes, i,j)
-                newCost = chosenRoutes[0].getCost() + chosenRoutes[1].getCost()
-                feasible = tw.feasible(chosenRoutes[0].nodes) and tw.feasible(chosenRoutes[1].nodes)
-                if feasible and success:
-                    return newCost
-                self.rollbackMove(chosenRoutes, initialRoutes)
-        self.n3 += 1
+                if success: return chosenRoutes[0].getCost() + chosenRoutes[1].getCost()
         return initialCost
     
     def doExchange(self, chosenRoutes, i, j):
         if self._is_charger(chosenRoutes, i, j): return False
-        tmp = chosenRoutes[0].nodes[i]
-        chosenRoutes[0].assign(i, chosenRoutes[1].nodes[j])
-        chosenRoutes[1].assign(j, tmp)
-        return True
+        r1 = chosenRoutes[0].nodes[:i] + [chosenRoutes[1].nodes[j]] + chosenRoutes[0].nodes[i+1:]
+        r2 = chosenRoutes[1].nodes[:j] + [chosenRoutes[0].nodes[i]] + chosenRoutes[1].nodes[j+1:]
+        if tw.feasible(r1) and tw.feasible(r2):
+            tmp = chosenRoutes[0].nodes[i]
+            chosenRoutes[0].assign(i, chosenRoutes[1].nodes[j])
+            chosenRoutes[1].assign(j, tmp)
+            return True
+        return False
     
-    #Todo: Add closest charger between the or exchange to try and make it feasible
     def orExchange(self, chosenRoutes, initialCost):
-        initialRoutes = self._cp(chosenRoutes)
+        randomizedR1 = self.randomly(range(1, len(chosenRoutes[1].nodes)-1)) 
         seqlen = random.randint(1,3)
         for i in self.randomly(range(1, len(chosenRoutes[0].nodes)-seqlen)):
-            for j in self.randomly(range(1, len(chosenRoutes[1].nodes)-1)):
+            for j in randomizedR1:
                 success = self.doOrExchange(chosenRoutes, i,j, seqlen)
-                #newCost = chosenRoutes[0].getCost() + chosenRoutes[1].getCost()
-                #feasible = tw.feasible(chosenRoutes[0].nodes) and tw.feasible(chosenRoutes[1].nodes)
-                feasible0 = tw.feasible(chosenRoutes[0].nodes)
-                feasible1 = tw.feasible(chosenRoutes[1].nodes)
-                if not feasible0:
-                    chosenRoutes[0].insert_at(i, rh.closestChargerBetweenTwoNodes(chosenRoutes[0].nodes[i-1], chosenRoutes[0].nodes[i]))
-                if not feasible1 and chosenRoutes[0] != chosenRoutes[1]:
-                    chosenRoutes[1].insert_at(j, rh.closestChargerBetweenTwoNodes(chosenRoutes[1].nodes[j-1], chosenRoutes[1].nodes[j]))
-                feasible = tw.feasible(chosenRoutes[0].nodes) and tw.feasible(chosenRoutes[1].nodes)
-                newCost = chosenRoutes[0].getCost() + chosenRoutes[1].getCost()
-                if feasible and success:
-                    return newCost
-                self.rollbackMove(chosenRoutes, initialRoutes)
-        self.n4 += 1
+                if success:
+                    return chosenRoutes[0].getCost() + chosenRoutes[1].getCost()
         return initialCost
     
-
     def doOrExchange(self, chosenRoutes, i, j, seqlen):
+        r1 = chosenRoutes[0].nodes[:i] + chosenRoutes[0].nodes[i+seqlen:] #might have to do -1 on seqlen here
+        r2 = chosenRoutes[1].nodes[:j] + chosenRoutes[0].nodes[i:i+seqlen] + chosenRoutes[1].nodes[j:]
         if self._is_charger(chosenRoutes, i, j): return False
-        for l in range(seqlen):
-            chosenRoutes[1].insert_at(j+l,chosenRoutes[0].nodes[i])
-            chosenRoutes[0].remove_at(i)
-        return True
-    
+        f1 = tw.feasible(r1)
+        f2 = tw.feasible(r2)
+        if not f1: r1.insert(i, rh.minCostCharger(r1[i-1], r1[i]))
+        if not f2: r2.insert(j, rh.minCostCharger(r2[j-1], r2[j]))
+                
+        if tw.feasible(r2) and tw.feasible(r1):
+            for l in range(seqlen):
+                chosenRoutes[1].insert_at(j+l,chosenRoutes[0].nodes[i])
+                chosenRoutes[0].remove_at(i)
+            if not f1: chosenRoutes[0].insert_at(i, rh.minCostCharger(r1[i-1],r1[i]))
+            if not f2: chosenRoutes[1].insert_at(j, rh.minCostCharger(r2[j-1],r2[j]))
+            return True
+        return False
+
     def crossover(self, chosenRoutes, initialCost):
-        initialRoutes = self._cp(chosenRoutes)
+        randomizedR1 = self.randomly(range(1, len(chosenRoutes[1].nodes) - 2))
         for i in self.randomly(range(1, len(chosenRoutes[0].nodes) - 2)):
-            for j in self.randomly(range(1, len(chosenRoutes[1].nodes) - 2)):
+            for j in randomizedR1:
                 success = self.doCrossover(chosenRoutes, i, j)
-                newCost = chosenRoutes[0].getCost() + chosenRoutes[1].getCost()
-                feasible = tw.feasible(chosenRoutes[0].nodes) and tw.feasible(chosenRoutes[1].nodes)
-                if feasible and success:
-                    return newCost # stop if a feasible solution is found
-                self.rollbackMove(chosenRoutes, initialRoutes)
-        self.n2 += 1
+                if success: return chosenRoutes[0].getCost() + chosenRoutes[1].getCost()
         return initialCost
 
     def doCrossover(self, chosenRoutes, i, j):
         # don't exchange anything with a charger
         if self._is_charger(chosenRoutes, i, j): return False
-        tmp = chosenRoutes[0].nodes[i+1:] # keep a buffer for replacing
-        chosenRoutes[0].nodes[i+1:] = chosenRoutes[1].nodes[j+1:]
-        chosenRoutes[1].nodes[j+1:] = tmp # replace with buffer
-        chosenRoutes[0].distance = rh.cost(chosenRoutes[0])
-        chosenRoutes[1].distance = rh.cost(chosenRoutes[1])
+        r1 = chosenRoutes[0].nodes[:i+1] + chosenRoutes[1].nodes[j+1:]
+        r2 = chosenRoutes[1].nodes[:j+1] + chosenRoutes[0].nodes[i+1:]
+        if tw.feasible(r1) and tw.feasible(r2):
+            tmp = chosenRoutes[0].nodes[i+1:] # keep a buffer for replacing
+            chosenRoutes[0].nodes[i+1:] = chosenRoutes[1].nodes[j+1:]
+            chosenRoutes[1].nodes[j+1:] = tmp # replace with buffer
+            chosenRoutes[0].distance = rh.cost(chosenRoutes[0])
+            chosenRoutes[1].distance = rh.cost(chosenRoutes[1])
         return True
 
     def relocation(self, chosenRoutes, initialCost):
-        initialRoutes = self._cp(chosenRoutes)
+        randomizedR1 = self.randomly(range(1, len(chosenRoutes[1].nodes)-1))
         for i in self.randomly(range(1, len(chosenRoutes[0].nodes)-1)): # indexes ignore the depot
-            for j in self.randomly(range(1, len(chosenRoutes[1].nodes)-1)):
-                # do not exchange anything for a charger
+            for j in randomizedR1:
                 success = self.doRelocation(chosenRoutes, i, j)
-                # check for cost and feasibility
-                newCost = chosenRoutes[0].getCost() + chosenRoutes[1].getCost()
-                feasible = tw.feasible(chosenRoutes[0].nodes) and tw.feasible(chosenRoutes[1].nodes)
-                if feasible and success:
-                    return newCost # stop if a feasible solution is found
-                self.rollbackMove(chosenRoutes, initialRoutes)
-        self.n1 += 1
+                if success: return chosenRoutes[0].getCost() + chosenRoutes[1].getCost()
         return initialCost
 
     def doRelocation(self, chosenRoutes, i, j):
-        if chosenRoutes[0].nodes[i].id.startswith("S"): #Try removing charger 
+        r1 = chosenRoutes[0].nodes[:i] + chosenRoutes[0].nodes[i+1:] 
+        r2 = chosenRoutes[1].nodes[:j] + [chosenRoutes[0].nodes[i]] +  chosenRoutes[1].nodes[j:] 
+        if tw.feasible(r1) and tw.feasible(r2):
+            if not chosenRoutes[0].nodes[i].id.startswith("S"):
+                chosenRoutes[1].insert_at(j, chosenRoutes[0].nodes[i])
             chosenRoutes[0].remove_at(i)
             return True
-        # insert new node
-        chosenRoutes[1].insert_at(j, chosenRoutes[0].nodes[i])
+        return False
+
+
+    def chargerSwap(self, chosenRoutes, initialCost):
+        for i in range(1,len(chosenRoutes[0].nodes)-1):
+            if chosenRoutes[0].nodes[i].id.startswith("S"):
+                success = self.doChargerSwap(chosenRoutes, i)
+                if success: return chosenRoutes[0].getCost() + chosenRoutes[1].getCost()
+        return initialCost
+    
+    def doChargerSwap(self, chosenRoutes, i):
+        nodes = chosenRoutes[0].nodes
+        charger = nodes[i]
+        currentCost = rh.chargerCostTuple(nodes[i-1],nodes[i+1])[1]
+        rw = nodes[:i] + nodes[i+1:]
+        options = []
+        if i > 1:
+            pre = rh.chargerCostTuple(nodes[i-2],nodes[i-1])
+            if currentCost > pre[1] and tw.feasible(rw[:i-1] + [pre[0]] + rw[i-1:]):
+                options.append((pre[0], pre[1], i-1))
+        if i < len(nodes) - 2: 
+            post = rh.chargerCostTuple(nodes[i+1],nodes[i+2])
+            if currentCost > post[1] and tw.feasible(rw[:i+2] + [post[0]] + rw[i+2:]):
+                options.append((post[0], post[1], i+2))
+        if options == []: return False
+        chosenCharger = min(options, key= lambda x: x[1])
         chosenRoutes[0].remove_at(i)
+        chosenRoutes[0].insert_at(chosenCharger[2], chosenCharger[0])
         return True
 
+    """
     def rollbackMove(self, chosenRoutes, initialRoutes):
         chosenRoutes[0].clear()
         chosenRoutes[1].clear()
@@ -157,14 +158,13 @@ class SimpleNeighborhood(object):
             chosenRoutes[0].insert(initialRoutes[0].nodes[i])
         for i in range(1, len(initialRoutes[1].nodes)):
             chosenRoutes[1].insert(initialRoutes[1].nodes[i])
-
-    #Dont call this every time in the inner loop
+    """
+    
     def randomly(self, sequence):
         shuffled = list(sequence)
         random.shuffle(shuffled)
         return iter(shuffled)
-        
-    #Do this only once at the end?
+
     def removeRoutesWithoutCustomers(self, routes):
         costReduction = 0
         for i in reversed(range(len(routes))):
@@ -179,8 +179,3 @@ class SimpleNeighborhood(object):
     def _cp(self, o):
         return pickle.loads(pickle.dumps(o,-1))
 
-    def __str__(self):
-        str_repr = "Relocation: %.2f Crossover: %.2f Exchange: %.2f OrExchange: %.2f TwoExchange: %.2f\n" % (self.n1/self.tot,self.n2/self.tot,self.n3/self.tot,self.n4/self.tot,self.n5/self.tot)
-        str_repr += "Total %d\n" % self.tot
-        str_repr += "Overall calls %d\n" % self.overall
-        return str_repr
