@@ -40,6 +40,8 @@ def check_combination(test_route):
     current_capacity = 0
     current_time = 0
 
+    waiting_times = []
+
     for i in range(len(test_route) - 1):
 
         # Check Time Windows
@@ -54,6 +56,11 @@ def check_combination(test_route):
             logger.debug("Rejected combination of %s, because we exceeded time window at %s" % (
                 [x for x in test_route], test_route[i + 1]))
             return []
+        wait = next_time - test_route[i + 1].windowStart
+        if wait > 0:
+            waiting_times.append(wait)
+        else:
+            waiting_times.append(0)
         current_time = max(next_time, test_route[i + 1].windowStart)
 
         # Check Capacity Constraints
@@ -88,6 +95,9 @@ def check_combination(test_route):
         # After this check we remove depots again because we work with savings
         del test_route[0]
         del test_route[-1]
+    for i in range(len(test_route)):
+        test_route[i].waiting_time = waiting_times[i]
+
     return test_route
 
 
