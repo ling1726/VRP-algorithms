@@ -21,11 +21,11 @@ class SwapCustomersInter(Neighbourhood):
                 neighbour = x.clone()
                 # remove node from one route, add on rand index to other
                 route1 = neighbour.routes[i]
-                route1 = Route(route1.strip_chargers())
+                route1.strip_chargers()
                 route1.remove_node(selected_customers[i])
 
                 route2 = neighbour.routes[j]
-                route2 = Route(route2.strip_chargers())
+                route2.strip_chargers()
                 route2.remove_node(selected_customers[j])
 
                 for index_route1 in range(len(route1.nodes) + 1):
@@ -50,7 +50,7 @@ class SwapCustomersInter(Neighbourhood):
                             continue
                         route2.nodes = checked
                         route2.update()
-                        print("managed to do swap", "neigbourhood 3")
+                        #print("managed to do swap", "neigbourhood 3")
                         new_neighbour.update_cost()
                         neighbourhood.append(new_neighbour)
         return neighbourhood

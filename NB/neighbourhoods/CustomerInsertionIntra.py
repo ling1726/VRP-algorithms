@@ -17,7 +17,7 @@ class CustomerInsertionIntra(Neighbourhood):
             neighbour = x.clone()
             route_removed_customer = neighbour.routes[i]
             # pick random cutomer
-            route_removed_customer = Route(route_removed_customer.strip_chargers())
+            route_removed_customer.strip_chargers()
             neighbour.routes[i] = route_removed_customer
             customer = route_removed_customer.nodes[random.randint(0, len(route_removed_customer.nodes) - 1)]
             # remove customer from the route
@@ -34,6 +34,6 @@ class CustomerInsertionIntra(Neighbourhood):
                     new_route.update()
                     neighbour_inserted.update_cost()
                     neighbourhood.append(neighbour_inserted)
-                    print("managed insertion INTRA", "neigbourhood 1")
+                    #print("managed insertion INTRA", "neigbourhood 1")
 
         return neighbourhood

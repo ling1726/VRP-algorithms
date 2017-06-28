@@ -1,5 +1,5 @@
 import random
-
+import copy
 
 class Neighbourhood:
 
@@ -21,4 +21,4 @@ class Neighbourhood:
         if neighbourhood:
             return neighbourhood[random.randint(0, len(neighbourhood)-1)]
         else: 
-            return x
+            return copy.deepcopy(x)

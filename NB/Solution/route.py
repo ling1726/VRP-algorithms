@@ -63,7 +63,7 @@ class Route(object):
         for node in self.nodes:
             if type(node) is Customer:
                 nodes.append(node)
-        return nodes
+        self.nodes = nodes
 
 
     def get_nodes(self):

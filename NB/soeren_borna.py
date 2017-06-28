@@ -94,9 +94,10 @@ def variable_neighbourhood_search(solution):
     neighbourhoods = [CustomerInsertionIntra(), CustomerRelocateInter(util.get_longest_waiting_customer),
                       SwapCustomersInter(util.get_longest_waiting_customer)]
     iteration_count = 0
-    current_best = solution
-    while iteration_count < 5:
+    best_all = solution
+    while iteration_count < 10:
         k = 0
+        current_best = solution
         while k < len(neighbourhoods):
             # Shaking
             neighbourhood_method = neighbourhoods[k]
@@ -104,12 +105,15 @@ def variable_neighbourhood_search(solution):
             tmp = variable_neighbourhood_descent(tmp)
             k += 1
             if tmp.cost < current_best.cost:
-                print("Found better for:", current_best.cost - tmp.cost)
+                print("VNS Found better for:", current_best.cost - tmp.cost)
                 print("---------------------------------------------------")
                 current_best = tmp
                 k = 0
         iteration_count += 1
-    return current_best
+        if current_best.cost < best_all.cost:
+            best_all = current_best
+        print("-----------------END OF ITERATION------------------")
+    return best_all
 
 
 def variable_neighbourhood_descent(solution):
@@ -123,8 +127,8 @@ def variable_neighbourhood_descent(solution):
         if neighbourhood:
             tmp = sorted(neighbourhood, key=lambda x: x.cost)[0]
             if tmp.cost < current_best.cost:
-                print("Found better for:", current_best.cost - tmp.cost)
-                print("---------------------------------------------------")
+                # print("VND Found better for:", current_best.cost - tmp.cost)
+                # print("---------------------------------------------------")
                 current_best = tmp
                 i = 0
 
@@ -196,9 +200,10 @@ def startProgram(args):
         datareading(file_parse)
         # blacklist = preprocessing()
         blacklist = []
-        solution = construction_heuristic(blacklist)
-        solution = variable_neighbourhood_search(solution)
-        _visualize_solution(instance, solution.routes)
+        solution_constr = construction_heuristic(blacklist)
+        solution = variable_neighbourhood_search(solution_constr)
+        print("Construction heuristic:",solution.cost," metha better for:", solution_constr.cost - solution.cost)
+        #_visualize_solution(instance, solution.routes)
         write_solution(solution.routes)
 
 
