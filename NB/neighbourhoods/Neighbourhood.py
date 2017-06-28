@@ -1,3 +1,5 @@
+import random
+
 
 class Neighbourhood:
 
@@ -15,4 +17,8 @@ class Neighbourhood:
         :param x: Solution class object
         :return:
         """
-        pass
+        neighbourhood = self.generate_neighbourhood(x)
+        if neighbourhood:
+            return neighbourhood[random.randint(0, len(neighbourhood)-1)]
+        else: 
+            return x

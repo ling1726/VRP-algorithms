@@ -5,15 +5,13 @@ from NB.Solution.route import Route
 from NB.neighbourhoods.Neighbourhood import Neighbourhood
 
 
-class CustomerRelocateInterDistance(Neighbourhood):
-
+class CustomerRelocateInter(Neighbourhood):
     def __init__(self, selection_function):
         self.selection_function = selection_function
 
-
     def generate_neighbourhood(self, x):
         """
-        Picks customer who is the farthest away from all other customers in his route and inserts it in other routes and also
+        Picks customer with selection criteria and inserts it in other routes and also
         in empty route.
         :param x:
         :return:

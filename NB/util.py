@@ -27,6 +27,7 @@ def get_farthest_customer(route):
                 farthest_node = node
     return farthest_node
 
+
 def get_longest_waiting_customer(route):
     longest_node = None
     longest_wait = -1
@@ -37,8 +38,10 @@ def get_longest_waiting_customer(route):
             longest_node = node
     return longest_node
 
+
 def calculate_weight_point(route):
-    return sum([node.x for node in route.nodes]) / len(route.nodes), sum([node.y for node in route.nodes]) / len(route.nodes)
+    return sum([node.x for node in route.nodes]) / len(route.nodes), sum([node.y for node in route.nodes]) / len(
+        route.nodes)
 
 
 def check_combination(test_route):
@@ -120,6 +123,7 @@ def _find_nearest_charger(node):
             min_charger = charger
     return min_charger
 
+
 # this assumes that every visit to any charger charges the vehicle fully and returns the maximum consumption of any part of this route between to chargers
 def _get_route_consumption(nodes):
     last_charger = instance.depot
@@ -138,7 +142,6 @@ def _get_route_consumption(nodes):
     if part_length > max_length:
         max_length = part_length
     return max_length * instance.fuelConsumptionRate
-
 
 
 def _add_charger(test_route, charger_index, use_heurisitic):

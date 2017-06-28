@@ -90,7 +90,7 @@ def datareading(path):
 
 
 def variable_neighbourhood_descent(solution):
-    neighbourhoods = [CustomerInsertionIntra(),CustomerRelocateInter(), SwapCustomersInter()]
+    neighbourhoods = [CustomerInsertionIntra(), CustomerRelocateInter(), SwapCustomersInter()]
     current_best = solution
     i = 0
     while i < len(neighbourhoods):
