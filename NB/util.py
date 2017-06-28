@@ -33,7 +33,7 @@ def get_longest_waiting_customer(route):
     longest_wait = -1
 
     for node in route.nodes:
-        if longest_wait < node.waiting_time:
+        if type(node) is Customer and longest_wait < node.waiting_time:
             longest_wait = node.waiting_time
             longest_node = node
     return longest_node
