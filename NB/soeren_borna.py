@@ -5,6 +5,7 @@ import subprocess
 import graphviz as gv
 
 import NB.instance.instance as instance
+from NB import util
 from NB.construction_heuristic import construction_heuristic
 from NB.instance.instance import *
 from NB.neighbourhoods.CustomerInsertionIntra import CustomerInsertionIntra
@@ -90,13 +91,14 @@ def datareading(path):
 
 
 def variable_neighbourhood_search(solution):
-    neighbourhoods = [CustomerInsertionIntra(),CustomerRelocateInter(), SwapCustomersInter()]
+    neighbourhoods = [CustomerInsertionIntra(), CustomerRelocateInter(util.get_longest_waiting_customer),
+                      SwapCustomersInter(util.get_longest_waiting_customer)]
     iteration_count = 0
     current_best = solution
     while iteration_count < 5:
         k = 0
         while k < len(neighbourhoods):
-            #Shaking
+            # Shaking
             neighbourhood_method = neighbourhoods[k]
             tmp = neighbourhood_method.generate_random_solution(current_best)
             tmp = variable_neighbourhood_descent(tmp)
@@ -106,12 +108,12 @@ def variable_neighbourhood_search(solution):
                 print("---------------------------------------------------")
                 current_best = tmp
                 k = 0
-
+        iteration_count += 1
     return current_best
 
 
 def variable_neighbourhood_descent(solution):
-    neighbourhoods = [CustomerInsertionIntra(), CustomerRelocateInter(), SwapCustomersInter()]
+    neighbourhoods = [CustomerInsertionIntra(), CustomerRelocateInter(util.get_farthest_customer), SwapCustomersInter(util.get_farthest_customer)]
     current_best = solution
     i = 0
     while i < len(neighbourhoods):
@@ -187,15 +189,15 @@ def write_solution(solution):
 def startProgram(args):
     fold = "../data/instances"
     for file_parse in os.listdir(fold):
-    #for i in range(0,1):
-        #file_parse = "rc106_21.txt"
+        # for i in range(0,1):
+        # file_parse = "rc106_21.txt"
         if file_parse.startswith(".") or file_parse.endswith("sol"):
             continue
         datareading(file_parse)
         # blacklist = preprocessing()
         blacklist = []
         solution = construction_heuristic(blacklist)
-        solution = variable_neighbourhood_descent(solution)
+        solution = variable_neighbourhood_search(solution)
         _visualize_solution(instance, solution.routes)
         write_solution(solution.routes)
 
