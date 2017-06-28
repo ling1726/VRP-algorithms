@@ -97,8 +97,9 @@ def variable_neighbourhood_search(solution):
         k = 0
         while k < len(neighbourhoods):
             #Shaking
-            neighbourhood_method = neighbourhoods[i]
-            neighbourhood = neighbourhood_method.generate_neighbourhood(current_best)
+            neighbourhood_method = neighbourhoods[k]
+            tmp = neighbourhood_method.generate_random_solution(current_best)
+            neighbourhood = variable_neighbourhood_descent(tmp)
             k += 1
             if neighbourhood:
                 tmp = sorted(neighbourhood, key=lambda x: x.cost)[0]
