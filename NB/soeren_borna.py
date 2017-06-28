@@ -99,15 +99,13 @@ def variable_neighbourhood_search(solution):
             #Shaking
             neighbourhood_method = neighbourhoods[k]
             tmp = neighbourhood_method.generate_random_solution(current_best)
-            neighbourhood = variable_neighbourhood_descent(tmp)
+            tmp = variable_neighbourhood_descent(tmp)
             k += 1
-            if neighbourhood:
-                tmp = sorted(neighbourhood, key=lambda x: x.cost)[0]
-                if tmp.cost < current_best.cost:
-                    print("Found better for:", current_best.cost - tmp.cost)
-                    print("---------------------------------------------------")
-                    current_best = tmp
-                    k = 0
+            if tmp.cost < current_best.cost:
+                print("Found better for:", current_best.cost - tmp.cost)
+                print("---------------------------------------------------")
+                current_best = tmp
+                k = 0
 
     return current_best
 
