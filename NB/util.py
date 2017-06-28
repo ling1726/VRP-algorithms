@@ -27,6 +27,15 @@ def get_farthest_customer(route):
                 farthest_node = node
     return farthest_node
 
+def get_longest_waiting_customer(route):
+    longest_node = None
+    longest_wait = -1
+
+    for node in route.nodes:
+        if longest_wait < node.waiting_time:
+            longest_wait = node.waiting_time
+            longest_node = node
+    return longest_node
 
 def calculate_weight_point(route):
     return sum([node.x for node in route.nodes]) / len(route.nodes), sum([node.y for node in route.nodes]) / len(route.nodes)
