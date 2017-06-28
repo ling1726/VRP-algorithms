@@ -20,16 +20,20 @@ class Solution(object):
         # solution attributes
         self.routes = []
         self.cost = 0.
+        self.visual = False
+
 
     def constructInitialSolution(self):
         constructionSolution = Construction()
         constructionSolution.solve()
         self.routes = self._cp(constructionSolution.routes)
         self.cost = constructionSolution.cost
+        if self.visual: _visualize_solution(self, 'ctr')
 
     def saSolution(self):
         sa = SA.SimulatedAnnealing(self.routes, self.cost)
         sa.solve()
+        if self.visual: _visualize_solution(self, 'sa')
 
         self.routes = self._cp(sa.routes)
         self.cost = sa.cost
@@ -41,13 +45,16 @@ class Solution(object):
     def _cp(self, o):
         return pickle.loads(pickle.dumps(o,-1)) 
 
+    def setVisual(self):
+        self.visual = True
+
     def __str__(self):
         routeStr = str.join('\n', [str.join(', ',[str(customer) for customer in route.nodes]) for route in self.routes])
         return '#solution for %s\n%.3f\n%s' % (inst.filename, self.cost, routeStr)
 
 
 
-def _visualize_solution(solution):
+def _visualize_solution(solution, mode):
     g1 = gv.Digraph(format='svg', engine="neato")
     color_step = int(16777215/len(solution.routes)+1)
     color = 0
@@ -71,7 +78,7 @@ def _visualize_solution(solution):
         color += color_step
 
     g1.format = 'svg'
-    filename = g1.render(filename='img/'+inst.filename.split('/')[3])
+    filename = g1.render(filename='img/'+inst.filename.split('/')[3]+'_'+mode)
 
         
 if __name__ == '__main__':
@@ -92,17 +99,17 @@ if __name__ == '__main__':
         inst.setFileName(instanceFile)
         inst.parse()
         sol = Solution()
+        if args.visual: sol.setVisual()
         sol.solve()
         stats.append(sol.cost)
 
-        if args.visual: _visualize_solution(sol)
         if not args.verify: print(sol)
         if args.verify:
             tempFile = instanceFile + '.sol'
             with open(tempFile, mode='w') as f:
                 f.write(str(sol))
             subprocess.call(['java', '-jar', '../data/verifier/EVRPTWVerifier.jar', '-d',inst.filename, tempFile])
-            os.remove(tempFile)
+            #os.remove(tempFile)
         inst.reset_data()
     if args.all:
         print("Mean: %.2f Median: %.2f Var: %.2f StdDev: %.2f" % (statistics.mean(stats), statistics.median(stats), statistics.variance(stats), statistics.stdev(stats)))
