@@ -89,6 +89,28 @@ def datareading(path):
     pass
 
 
+def variable_neighbourhood_search(solution):
+    neighbourhoods = [CustomerInsertionIntra(),CustomerRelocateInter(), SwapCustomersInter()]
+    iteration_count = 0
+    current_best = solution
+    while iteration_count < 5:
+        k = 0
+        while k < len(neighbourhoods):
+            #Shaking
+            neighbourhood_method = neighbourhoods[i]
+            neighbourhood = neighbourhood_method.generate_neighbourhood(current_best)
+            k += 1
+            if neighbourhood:
+                tmp = sorted(neighbourhood, key=lambda x: x.cost)[0]
+                if tmp.cost < current_best.cost:
+                print("Found better for:", current_best.cost - tmp.cost)
+                print("---------------------------------------------------")
+                current_best = tmp
+                k = 0
+
+    return current_best
+
+
 def variable_neighbourhood_descent(solution):
     neighbourhoods = [CustomerInsertionIntra(),CustomerRelocateInter(), SwapCustomersInter()]
     current_best = solution
