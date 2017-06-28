@@ -103,10 +103,10 @@ def variable_neighbourhood_search(solution):
             if neighbourhood:
                 tmp = sorted(neighbourhood, key=lambda x: x.cost)[0]
                 if tmp.cost < current_best.cost:
-                print("Found better for:", current_best.cost - tmp.cost)
-                print("---------------------------------------------------")
-                current_best = tmp
-                k = 0
+                    print("Found better for:", current_best.cost - tmp.cost)
+                    print("---------------------------------------------------")
+                    current_best = tmp
+                    k = 0
 
     return current_best
 
