@@ -1,0 +1,87 @@
+import instance.instance as inst
+import sys
+import pickle
+import random
+import route as rt
+import twhelper as tw
+import routehelper as rh
+import SimulatedAnnealing as sa
+from time import time
+
+class LargeNeighborhoodSearch(object):
+
+    def __init__(self, routes, cost):
+        self.routes = routes
+        self.cost = cost
+
+    def solve(self):
+        best = (self._cp(self.routes), self.cost)
+        current = (self._cp(self.routes), self.cost)
+        startTime = time()
+        for counter in range(100):
+            currentTime = time()
+            if currentTime - startTime > 180: 
+                print("Timeout")
+                break
+            nxt = self.anneal(current)
+            print("Best: %.2f Current: %.2f Next: %.2f" % (best[1], current[1], nxt[1]) )
+            if self.accept(nxt, current): 
+                current = nxt
+            if nxt[1] < best[1]: best = self._cp(nxt)
+            
+        self.routes = best[0]
+        self.cost = best[1]
+        
+    def anneal(self, current):
+        SA = sa.SimulatedAnnealing(self._cp(current[0]), current[1])
+        SA.solve()
+        return (SA.routes, SA.cost)
+
+    def destroy(self, sol):
+        toBeAdded = []
+        while len(toBeAdded) < len(inst.customers) * 0.05:
+            route = random.choice(sol[0])
+            if not route.hasCustomer():
+                sol = (sol[0],sol[1] - route.getCost()) 
+                del sol[0][sol[0].index(route)]
+                continue
+            node = random.choice(route.nodes[1:-1])
+            if node.id.startswith("C") and tw.feasible([inst.depot,node,inst.depot]):
+                toBeAdded.append(node)
+                initialCost = route.getCost()
+                route.remove_at(route.nodes.index(node))
+                sol = (sol[0],sol[1] - initialCost + route.getCost()) 
+
+        route = rt.Route(inst.depot)
+        while toBeAdded:
+            node = toBeAdded.pop()
+            if tw.feasible(route.nodes + [node, inst.depot]):
+                route.insert(node)
+            elif tw.feasible(route.nodes + [rh.minCostCharger(route.nodes[-1],node), node, inst.depot]):
+                route.insertCharger(rh.minCostCharger(route.nodes[-1],node))
+                route.insert(node)
+            else:
+                route.insert(inst.depot)
+                sol[0].append(route)
+                sol = (sol[0],sol[1] + route.getCost())
+                route = rt.Route(inst.depot)
+                route.insert(node)
+            if not toBeAdded:
+                route.insert(inst.depot)
+                sol[0].append(route)
+                sol = (sol[0],sol[1] + route.getCost())
+        return sol
+
+    def rebuild(self, destroyed):
+        return destroyed
+
+    def accept(self, nxt, current):
+        return nxt[1] < current[1] #SA probability functio with fixed temperature?
+
+    def randomly(self, sequence):
+        shuffled = list(sequence)
+        random.shuffle(shuffled)
+        return iter(shuffled)
+
+    def _cp(self, o):
+        return pickle.loads(pickle.dumps(o,-1))   

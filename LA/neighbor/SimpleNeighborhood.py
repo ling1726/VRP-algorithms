@@ -5,24 +5,40 @@ import twhelper as tw
 import routehelper as rh
 import random
 from numpy.random import choice
+import math
 
 class SimpleNeighborhood(object):
 
     def __init__(self):
-        pass
+        self.operators = [self.relocation, self.crossover, self.exchange, self.orExchange, self.twoExchange, self.chargerSwap]
+        #self.weights = [0.35,0.15,0.1,0.25,0.1,0.05] #3
+        #self.weights = [0.3,0.15,0.15,0.2,0.15,0.05] #2
+        self.relocationP = 0.25#0.4
+        self.crossoverP = 0.15#0.05
+        self.exchangeP = 0.15#0.15
+        self.orExchangeP = 0.2#0.27
+        self.twoExchangeP = 0.15#0.1
+        self.chargerSwapP = 0.1#0.05#0.08
+        self.weights = [self.relocationP, self.crossoverP, self.exchangeP, self.orExchangeP, self.twoExchangeP, self.chargerSwapP]
+
+    def set_params(self, relocationP, crossoverP, exchangeP, orExchangeP, twoExchangeP, chargerSwapP):
+        if sum([relocationP, crossoverP, exchangeP, orExchangeP, twoExchangeP, chargerSwapP]) != 1: return False 
+        self.weights = [relocationP, crossoverP, exchangeP, orExchangeP, twoExchangeP, chargerSwapP]
+        return True
+        
 
     def generate_neighbor(self, routes, cost):        
         cost -= self.removeRoutesWithoutCustomers(routes) #This is unecessarily expensive
         chosenRouteIndexes = random.sample(range(0, len(routes)), 2)        
         chosenRoutes = [self._cp(routes[chosenRouteIndexes[0]]), self._cp(routes[chosenRouteIndexes[1]])]
         initialCost = chosenRoutes[0].getCost() + chosenRoutes[1].getCost() # previous cost of the two routes
-        #newCost = choice([self.relocation, self.crossover, self.exchange, self.orExchange, self.twoExchange],p=[0.5,0.15,0.1,0.15,0.1])(chosenRoutes, initialCost)
-        newCost = choice([self.relocation, self.crossover, self.exchange, self.orExchange, self.twoExchange, self.chargerSwap],p=[0.35,0.15,0.1,0.25,0.1,0.05])(chosenRoutes, initialCost)
+        newCost = choice(self.operators,p=self.weights)(chosenRoutes, initialCost)
+
         newTotalCost = cost - initialCost + newCost
         return {"chosenRoutesIndexes": chosenRouteIndexes, "chosenRoutes": chosenRoutes, "newTotalCost": newTotalCost }
 
     def twoExchange(self, chosenRoutes, initialCost):
-        for i in range(1, len(chosenRoutes[0].nodes)-2):#for i in self.randomly(range(1, len(chosenRoutes[0].nodes)-2)):
+        for i in self.randomly(range(1, len(chosenRoutes[0].nodes)-2)):
             for j in self.randomly(range(i+1, len(chosenRoutes[0].nodes)-1)):
                 success = self.doTwoExchange(chosenRoutes, i,j)
                 if success: return chosenRoutes[0].getCost() + chosenRoutes[1].getCost() 
@@ -43,9 +59,9 @@ class SimpleNeighborhood(object):
                 success = self.doExchange(chosenRoutes, i,j)
                 if success: return chosenRoutes[0].getCost() + chosenRoutes[1].getCost()
         return initialCost
-    
+        
     def doExchange(self, chosenRoutes, i, j):
-        if self._is_charger(chosenRoutes, i, j): return False
+        if self._is_charger(chosenRoutes, i, j): return False #Check if charger, and if it can be removed
         r1 = chosenRoutes[0].nodes[:i] + [chosenRoutes[1].nodes[j]] + chosenRoutes[0].nodes[i+1:]
         r2 = chosenRoutes[1].nodes[:j] + [chosenRoutes[0].nodes[i]] + chosenRoutes[1].nodes[j+1:]
         if tw.feasible(r1) and tw.feasible(r2):
@@ -54,32 +70,33 @@ class SimpleNeighborhood(object):
             chosenRoutes[1].assign(j, tmp)
             return True
         return False
-    
+
     def orExchange(self, chosenRoutes, initialCost):
+        l = len(chosenRoutes[0].nodes)
         randomizedR1 = self.randomly(range(1, len(chosenRoutes[1].nodes)-1)) 
-        seqlen = random.randint(1,3)
-        for i in self.randomly(range(1, len(chosenRoutes[0].nodes)-seqlen)):
+        seqlen = random.randint(1,min(2, l-2))
+        for i in self.randomly(range(1, l-seqlen)):
             for j in randomizedR1:
                 success = self.doOrExchange(chosenRoutes, i,j, seqlen)
                 if success:
-                    return chosenRoutes[0].getCost() + chosenRoutes[1].getCost()
+                    return chosenRoutes[0].getCost() + chosenRoutes[1].getCost() 
         return initialCost
     
     def doOrExchange(self, chosenRoutes, i, j, seqlen):
         r1 = chosenRoutes[0].nodes[:i] + chosenRoutes[0].nodes[i+seqlen:] #might have to do -1 on seqlen here
         r2 = chosenRoutes[1].nodes[:j] + chosenRoutes[0].nodes[i:i+seqlen] + chosenRoutes[1].nodes[j:]
-        if self._is_charger(chosenRoutes, i, j): return False
         f1 = tw.feasible(r1)
         f2 = tw.feasible(r2)
         if not f1: r1.insert(i, rh.minCostCharger(r1[i-1], r1[i]))
-        if not f2: r2.insert(j, rh.minCostCharger(r2[j-1], r2[j]))
+        rng = random.randint(0,1)
+        if not f2: r2.insert(j, rh.minCostCharger(r2[j-1 + seqlen * rng], r2[j + seqlen * rng]))
                 
         if tw.feasible(r2) and tw.feasible(r1):
             for l in range(seqlen):
                 chosenRoutes[1].insert_at(j+l,chosenRoutes[0].nodes[i])
                 chosenRoutes[0].remove_at(i)
             if not f1: chosenRoutes[0].insert_at(i, rh.minCostCharger(r1[i-1],r1[i]))
-            if not f2: chosenRoutes[1].insert_at(j, rh.minCostCharger(r2[j-1],r2[j]))
+            if not f2: chosenRoutes[1].insert_at(j, rh.minCostCharger(r2[j-1 + seqlen * rng],r2[j + seqlen*rng]))
             return True
         return False
 
@@ -121,44 +138,30 @@ class SimpleNeighborhood(object):
             chosenRoutes[0].remove_at(i)
             return True
         return False
-
-
+    
     def chargerSwap(self, chosenRoutes, initialCost):
-        for i in range(1,len(chosenRoutes[0].nodes)-1):
-            if chosenRoutes[0].nodes[i].id.startswith("S"):
-                success = self.doChargerSwap(chosenRoutes, i)
-                if success: return chosenRoutes[0].getCost() + chosenRoutes[1].getCost()
+        try: i = next(i for i in range(1,len(chosenRoutes[0].nodes)-1) if chosenRoutes[0].nodes[i].id.startswith("S"))
+        except StopIteration: return initialCost
+        success = self.doChargerSwap(chosenRoutes[0], i)
+        if success: return chosenRoutes[0].getCost() + chosenRoutes[1].getCost()
         return initialCost
     
-    def doChargerSwap(self, chosenRoutes, i):
-        nodes = chosenRoutes[0].nodes
-        charger = nodes[i]
-        currentCost = rh.chargerCostTuple(nodes[i-1],nodes[i+1])[1]
-        rw = nodes[:i] + nodes[i+1:]
-        options = []
-        if i > 1:
-            pre = rh.chargerCostTuple(nodes[i-2],nodes[i-1])
-            if currentCost > pre[1] and tw.feasible(rw[:i-1] + [pre[0]] + rw[i-1:]):
-                options.append((pre[0], pre[1], i-1))
-        if i < len(nodes) - 2: 
-            post = rh.chargerCostTuple(nodes[i+1],nodes[i+2])
-            if currentCost > post[1] and tw.feasible(rw[:i+2] + [post[0]] + rw[i+2:]):
-                options.append((post[0], post[1], i+2))
-        if options == []: return False
-        chosenCharger = min(options, key= lambda x: x[1])
-        chosenRoutes[0].remove_at(i)
-        chosenRoutes[0].insert_at(chosenCharger[2], chosenCharger[0])
-        return True
-
-    """
-    def rollbackMove(self, chosenRoutes, initialRoutes):
-        chosenRoutes[0].clear()
-        chosenRoutes[1].clear()
-        for i in range(1, len(initialRoutes[0].nodes)):
-            chosenRoutes[0].insert(initialRoutes[0].nodes[i])
-        for i in range(1, len(initialRoutes[1].nodes)):
-            chosenRoutes[1].insert(initialRoutes[1].nodes[i])
-    """
+    def doChargerSwap(self, chosenRoute, i):
+        rw = chosenRoute.nodes[:i] + chosenRoute.nodes[i+1:]
+        minCost = sys.maxsize
+        minInd = None
+        minCharger = None
+        for j in range(1,len(rw)):
+            chargerTuple = rh.chargerCostTuple(rw[j-1], rw[j])
+            if tw.feasible(rw[:j] + [chargerTuple[0]] + rw[j:]) and chargerTuple[1] < minCost:
+                minCharger = chargerTuple[0]
+                minCost = chargerTuple[1]
+                minInd = j
+        if minInd:
+            chosenRoute.remove_at(i)
+            chosenRoute.insert_at(minInd, minCharger)
+            return True
+        return False
     
     def randomly(self, sequence):
         shuffled = list(sequence)
