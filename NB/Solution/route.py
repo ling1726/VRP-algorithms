@@ -8,7 +8,6 @@ from NB.instance.customer import Customer
 
 class Route(object):
     def __init__(self, init_nodes=[]):
-
         self.nodes = copy.deepcopy(init_nodes)
         if len(init_nodes) > 0:
             self.start = init_nodes[0]
@@ -59,14 +58,22 @@ class Route(object):
         self.cost = self.calc_cost()
         self.weight_point = util.calculate_weight_point(self)
 
+    def strip_chargers(self):
+        nodes = []
+        for node in self.nodes:
+            if type(node) is Customer:
+                nodes.append(node)
+        self.nodes = nodes
+
+
     def get_nodes(self):
         return self.nodes
 
     def clone(self):
         nodes = []
         for node in self.nodes:
-                if type(node) is Customer:
-                    nodes.append(node)
+            #if type(node) is Customer:
+                nodes.append(node)
         cloned = Route(nodes)
         cloned.cost = self.cost
         cloned.weight_point = self.weight_point

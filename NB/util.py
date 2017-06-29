@@ -27,9 +27,36 @@ def get_farthest_customer(route):
                 farthest_node = node
     return farthest_node
 
+def check_violates_tw(routes):
+    for r in routes:
+        # TODO: check if route violates time windows!!
+        nodes = r.get_nodes()
+        if len(nodes) == 2 and type(nodes[0]) is Customer and type(nodes[1]) is Charger:
+            start_time = max(instance.getValDistanceMatrix(instance.depot, nodes[0]) * instance.averageVelocity,
+                             nodes[0].windowStart)
+            a = instance.getValDistanceMatrix(nodes[0], nodes[1]) * instance.averageVelocity
+            b = instance.getValDistanceMatrix(nodes[1], instance.depot) * instance.averageVelocity
+            endtime = start_time + nodes[0].serviceTime + a + b + nodes[1].load_time
+            if endtime > instance.depot.windowEnd:
+                print(instance.filename)
+                rev = list(reversed(nodes))
+                r.nodes = rev
+        r.update()
+
+def get_longest_waiting_customer(route):
+    longest_node = None
+    longest_wait = -1
+
+    for node in route.nodes:
+        if type(node) is Customer and longest_wait < node.waiting_time:
+            longest_wait = node.waiting_time
+            longest_node = node
+    return longest_node
+
 
 def calculate_weight_point(route):
-    return sum([node.x for node in route.nodes]) / len(route.nodes), sum([node.y for node in route.nodes]) / len(route.nodes)
+    return sum([node.x for node in route.nodes]) / len(route.nodes), sum([node.y for node in route.nodes]) / len(
+        route.nodes)
 
 
 def check_combination(test_route):
@@ -39,6 +66,8 @@ def check_combination(test_route):
     test_route = make_fuel_consumption_feasible(test_route)
     current_capacity = 0
     current_time = 0
+
+    waiting_times = []
 
     for i in range(len(test_route) - 1):
 
@@ -54,6 +83,11 @@ def check_combination(test_route):
             logger.debug("Rejected combination of %s, because we exceeded time window at %s" % (
                 [x for x in test_route], test_route[i + 1]))
             return []
+        wait = next_time - test_route[i + 1].windowStart
+        if wait > 0:
+            waiting_times.append(wait)
+        else:
+            waiting_times.append(0)
         current_time = max(next_time, test_route[i + 1].windowStart)
 
         # Check Capacity Constraints
@@ -88,6 +122,9 @@ def check_combination(test_route):
         # After this check we remove depots again because we work with savings
         del test_route[0]
         del test_route[-1]
+    for i in range(len(test_route)):
+        test_route[i].waiting_time = waiting_times[i]
+
     return test_route
 
 
@@ -100,6 +137,7 @@ def _find_nearest_charger(node):
             min_distance = this_distance
             min_charger = charger
     return min_charger
+
 
 # this assumes that every visit to any charger charges the vehicle fully and returns the maximum consumption of any part of this route between to chargers
 def _get_route_consumption(nodes):
@@ -119,7 +157,6 @@ def _get_route_consumption(nodes):
     if part_length > max_length:
         max_length = part_length
     return max_length * instance.fuelConsumptionRate
-
 
 
 def _add_charger(test_route, charger_index, use_heurisitic):
