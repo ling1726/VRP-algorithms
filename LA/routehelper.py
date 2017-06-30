@@ -23,10 +23,7 @@ def cost_n(nodes):
 
 def closestCharger(node):
     return min(inst.chargers.values(), key=lambda x: _b(node, x))
-"""
-def closestChargerBetweenTwoNodes(node1, node2):
-    return min(chargersWithoutS0, key=lambda x: _b(node1,x) + _b(x, node2))
-"""
+
 def closestChargerBetweenTwoNodes(node1, node2):
     charger = min(chargersWithoutS0, key=lambda x: _b(node1,x) + _b(x, node2))
     cost = _b(node1,charger) + _b(charger, node2)
