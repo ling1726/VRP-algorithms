@@ -1,6 +1,8 @@
 import argparse
-import os
+import re
+import statistics
 import subprocess
+import time
 
 import graphviz as gv
 
@@ -165,43 +167,37 @@ def _visualize_solution(instance, solution):
     filename = g1.render(filename='img/' + instance.filename)
 
 
-def write_solution(solution, file_parse, constr_sol, time_ex):
+def write_solution(solution, file_parse, constr_sol, time_ex, i, results_file):
     print(instance.filename)
     print(solution.cost)
     print()
-    rf = open("results.csv", "a")
+    rf = open(results_file, "a")
     rf.write(file_parse + "," + str(constr_sol.cost) + "," + str(solution.cost) + "," + str(
         100 * (constr_sol.cost - solution.cost) / constr_sol.cost) + "," + str(time_ex) + "\n")
     rf.close()
-    if args.verify:
-        tempFile = instance.filename + '.sol'
-        f = open(tempFile, mode='w')
-        f.write(str(round(solution.cost, 3)) + "\n")
-        for r in solution.routes:
-            sol_line = "D0, "
-            for c in r.get_nodes():
-                sol_line += str(c).split("_")[0]
-                sol_line += ", "
-            sol_line += "D0\n"
-            f.write(sol_line)
-        f.close()
 
-        p2 = subprocess.check_output(
-            ['java', '-jar', '../data/verifier/EVRPTWVerifier.jar', '-d', instance.filename, tempFile])
-        rf = open("resulting.txt", "a")
-        rf.write(str(p2) + "\n")
-        rf.close()
-        print(p2[-13:-2])
-        os.remove(tempFile)
+    tempFile = file_parse + str(i) + '.sol'
+    f = open(tempFile, mode='w')
+    f.write(str(round(solution.cost, 3)) + "\n")
+    for r in solution.routes:
+        sol_line = "D0, "
+        for c in r.get_nodes():
+            sol_line += str(c).split("_")[0]
+            sol_line += ", "
+        sol_line += "D0\n"
+        f.write(sol_line)
+    f.close()
 
-
-import time
-
-import re
+    p2 = subprocess.check_output(
+        ['java', '-jar', '../data/verifier/EVRPTWVerifier.jar', '-d', tempFile, tempFile])
+    rf = open("resulting.txt", "a")
+    rf.write(str(p2) + "\n")
+    rf.close()
+    print(p2[-13:-2])
 
 
 def check_string(file_parse):
-    with open("results.csv") as f:
+    with open("results_test.csv") as f:
         found = False
         for line in f:  # iterate over the file one line at a time(memory efficient)
             if re.search("{0}".format(file_parse), line):  # if string found is in current line then print it
@@ -209,32 +205,49 @@ def check_string(file_parse):
     return found
 
 
-def startProgram(args):
-    fold = "../data/instances"
-    for file_parse in os.listdir(fold):
-        # for i in range(0,1):
-        # file_parse = "rc106_21.txt"
-        if file_parse.startswith(".") or file_parse.endswith(
-                "sol") or check_string(file_parse):
-            print("skipped",file_parse)
-            continue
-        print("started", file_parse)
-        datareading(file_parse)
-        # blacklist = preprocessing()
-        blacklist = []
-        solution_constr = construction_heuristic(blacklist)
-        start = time.time()
-        solution = variable_neighbourhood_search(solution_constr)
-        end = time.time()
-        print("Construction heuristic:", solution.cost, " metha better for:", solution_constr.cost - solution.cost,
-              "time :", end - start)
-        _visualize_solution(instance, solution.routes)
-        write_solution(solution, file_parse, solution_constr, end - start)
+def create_statistics(results_file, number_of_runs):
+    with open(results_file) as f:
+        results = {}
+        for line in f:
+            split = line.split(",")
+            results_list = results.get(split[0], [])
+            if not results_list:
+                results[split[0]] = results_list
+                for i in range(4):
+                    results_list.append([])
+            for i in range(4):
+                results_list[i].append(float(split[i + 1]))
+        for key in results:
+            string = key
+            for j in range(4):
+                string += "," + str(sum(results[key][j]) / number_of_runs) + "," + str(
+                    statistics.pstdev(results[key][j]))
+            print(string)
+
+
+def start_program(args, i):
+    datareading(args.instance)
+    # blacklist = preprocessing()
+    blacklist = []
+    solution_constr = construction_heuristic(blacklist)
+    start = time.time()
+    solution = variable_neighbourhood_search(solution_constr)
+    end = time.time()
+    print("Construction heuristic:", solution.cost, " metha better for:", solution_constr.cost - solution.cost,
+          "time :", end - start)
+    _visualize_solution(instance, solution.routes)
+    write_solution(solution, args.instance, solution_constr, end - start, i)
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Runs simple Sequential Heuristic on instance file')
     parser.add_argument('--instance', '-i', metavar='INSTANCE_FILE', required=True, help='The instance file')
     parser.add_argument('--verify', '-v', action='store_true', help='Uses the EVRPTWVerifier to verify the solution')
+    parser.add_argument('--results_file', '-r', default="results.csv",
+                        help='Write construction cost, methaheuristic cost, improvement, and time')
+    parser.add_argument('--runs', default=1, help='Number of runs')
     args = parser.parse_args()
-    startProgram(args)
+    # because of statistics
+    for i in range(args.runs):
+        start_program(args, i)
+    create_statistics(args.results_file, args.runs)

@@ -1,7 +1,7 @@
 import random
 
 import NB.util as util
-from NB.Solution.route import Route
+from NB.solution.route import Route
 from NB.neighbourhoods.Neighbourhood import Neighbourhood
 
 
@@ -9,7 +9,7 @@ class CustomerInsertionIntra(Neighbourhood):
     def generate_neighbourhood(self, x):
         """
         Picks customer in route at random and inserts it in every slot in route
-        :param x:Solution class object
+        :param x:solution class object
         :return:
         """
         neighbourhood = []
@@ -19,6 +19,8 @@ class CustomerInsertionIntra(Neighbourhood):
             # pick random cutomer
             route_removed_customer.strip_chargers()
             neighbour.routes[i] = route_removed_customer
+            if len(route_removed_customer.nodes) == 0:
+                continue
             customer = route_removed_customer.nodes[random.randint(0, len(route_removed_customer.nodes) - 1)]
             # remove customer from the route
             route_removed_customer.remove_node(customer)
@@ -28,7 +30,7 @@ class CustomerInsertionIntra(Neighbourhood):
                 neighbour_inserted = neighbour.clone()
                 new_route = neighbour_inserted.routes[i]
                 new_route.add_node_at(customer, j)
-                checked = util.check_combination(new_route.nodes)
+                checked = util.check_route(new_route.nodes)
                 if checked:
                     new_route.nodes = checked
                     new_route.update()

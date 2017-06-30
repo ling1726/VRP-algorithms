@@ -1,8 +1,8 @@
 from operator import itemgetter
 
 import NB.instance.instance as instance
-from NB.Solution.Solution import Solution
-from NB.Solution.route import Route
+from NB.solution.solution import Solution
+from NB.solution.route import Route
 from NB.instance.instance import *
 import NB.util as util
 
@@ -102,7 +102,7 @@ def construction_heuristic(blacklist):
         route1, route2 = _get_routes(sav, routes)
         if route1 is None or route2 is None or route1 == route2:
             continue
-        new_route = util.check_combination(route1.get_nodes() + route2.get_nodes())
+        new_route = util.check_route(route1.get_nodes() + route2.get_nodes())
         if new_route:
             routes.remove(route1)
             routes.remove(route2)

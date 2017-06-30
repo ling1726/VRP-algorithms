@@ -6,7 +6,7 @@ class Neighbourhood:
     def generate_neighbourhood(self, x):
         """
         Abstract method for strategy pattern
-        :param x: Solution class object
+        :param x: solution class object
         :return:
         """
         pass
@@ -14,7 +14,7 @@ class Neighbourhood:
     def generate_random_solution(self, x):
         """
         Abstract method for strategy pattern
-        :param x: Solution class object
+        :param x: solution class object
         :return:
         """
         neighbourhood = self.generate_neighbourhood(x)

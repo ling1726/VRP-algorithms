@@ -1,7 +1,7 @@
 import random
 
 import NB.util as util
-from NB.Solution.route import Route
+from NB.solution.route import Route
 from NB.neighbourhoods.Neighbourhood import Neighbourhood
 
 
@@ -24,6 +24,8 @@ class CustomerRelocateInter(Neighbourhood):
             neighbour_removed = x.clone()
             # remove node from one route, and insert to all others
             route1 = neighbour_removed.routes[i]
+            if len(route1.nodes) == 0:
+                continue
             route1.remove_node(selected_customers[i])
             for j in range(len(x.routes)):
                 neighbour = neighbour_removed.clone()
@@ -31,7 +33,7 @@ class CustomerRelocateInter(Neighbourhood):
                 extended_route.strip_chargers()
                 extended_route.add_node_at(selected_customers[i], random.randint(0, len(extended_route.nodes)))
                 # extended_route.add_node_at_best(farthest_customers[i])
-                checked = util.check_combination(extended_route.nodes)
+                checked = util.check_route(extended_route.nodes)
                 # combination is not feasible
                 if not checked:
                     continue

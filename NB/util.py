@@ -16,6 +16,10 @@ def calculate_route_cost(route, start=instance.depot, end=instance.depot):
 
 
 def get_farthest_customer(route):
+    """
+    Returns farthest customer from the weight pointt
+    :return:
+    """
     farthest_node = None
     farthest_dist = -1
 
@@ -27,7 +31,12 @@ def get_farthest_customer(route):
                 farthest_node = node
     return farthest_node
 
+
 def check_violates_tw(routes):
+    """
+    Check if route violates time window. If it does then route is reversed
+    :return:
+    """
     for r in routes:
         # TODO: check if route violates time windows!!
         nodes = r.get_nodes()
@@ -42,6 +51,7 @@ def check_violates_tw(routes):
                 rev = list(reversed(nodes))
                 r.nodes = rev
         r.update()
+
 
 def get_longest_waiting_customer(route):
     longest_node = None
@@ -59,10 +69,13 @@ def calculate_weight_point(route):
         route.nodes)
 
 
-def check_combination(test_route):
-    # Here we need to check if this solution is feasible
-    # For now we just the newly created route and calculate the consumption, capacity etc...
-    # There might be a better way to do this
+def check_route(test_route):
+    """
+    Check if given route is feasible regarding the time window and fuel consumption. If fuel consumption is not feasible
+    method make_fule_consumption_feasible is called
+    :param test_route: list of nodes
+    :return: empty list if route can not be made feasible, otherwise feasible route
+    """
     test_route = make_fuel_consumption_feasible(test_route)
     current_capacity = 0
     current_time = 0
@@ -118,10 +131,6 @@ def check_combination(test_route):
         print("currentCapacity: %d\nDemand of next Node: %d\nnextCapacity: %d" % (current_capacity, test_route[i+1].demand, next_capacity))
         input()'''
 
-    if test_route:
-        # After this check we remove depots again because we work with savings
-        del test_route[0]
-        del test_route[-1]
     for i in range(len(test_route)):
         test_route[i].waiting_time = waiting_times[i]
 
@@ -139,8 +148,12 @@ def _find_nearest_charger(node):
     return min_charger
 
 
-# this assumes that every visit to any charger charges the vehicle fully and returns the maximum consumption of any part of this route between to chargers
 def _get_route_consumption(nodes):
+    """
+    this assumes that every visit to any charger charges the vehicle fully and returns the maximum consumption of any part of this route between to chargers
+    :param nodes:
+    :return:
+    """
     last_charger = instance.depot
     max_length = 0
     part_route = []
@@ -159,11 +172,12 @@ def _get_route_consumption(nodes):
     return max_length * instance.fuelConsumptionRate
 
 
-def _add_charger(test_route, charger_index, use_heurisitic):
+def _add_charger(test_route, charger_index, use_heuristic):
     """
     Method looks backward for the first feasible charger insertion
     :param test_route:
     :param charger_index: desired charged index
+    :param use_heuristic: if true and normal insertion is not feasible then insert charger between two most consuming edges
     :return: if inserted charger is depot or charger can not be added to make route feasible returns empty list,
             otherwise feasible route
     """
@@ -184,7 +198,7 @@ def _add_charger(test_route, charger_index, use_heurisitic):
     # if feasible insertion is not found or it is depot or it is charger right before the depot
     if charger_org and charger_org.equal_to(instance.depot):  # or type(tmp_route[-2]) is Charger :
         tmp_route = []
-    elif not feasible_insertion and use_heurisitic:
+    elif not feasible_insertion and use_heuristic:
         # heurisic insertion
         edge = _most_consuming_edge(tmp_route[:charger_index + 1])
         nearest_charger = _nearest_charger(tmp_route[edge[0]], tmp_route[edge[1]]).generate_clone()
@@ -197,17 +211,28 @@ def _add_charger(test_route, charger_index, use_heurisitic):
 
 
 def _most_consuming_edge(route):
+    """
+    Returns edge with longest distance
+    :param route:
+    :return: edge indices
+    """
     max_dist = 0
-    node_indexes = None
+    node_indices = None
     for i in range(len(route) - 1):
         temp_dist = instance.getValDistanceMatrix(route[i], route[i + 1])
         if temp_dist > max_dist:
             max_dist = temp_dist
-            node_indexes = (i, i + 1)
-    return node_indexes
+            node_indices = (i, i + 1)
+    return node_indices
 
 
 def _nearest_charger(node1, node2):
+    """
+    Returns nearest charger between given nodes
+    :param node1:
+    :param node2:
+    :return:
+    """
     min_dist = None
     min_charger = None
 
@@ -223,6 +248,12 @@ def _nearest_charger(node1, node2):
 
 
 def make_fuel_consumption_feasible(test_route, use_heuristic=True):
+    """
+    Method incrementaly inserts charges in route to make it feasible calling _add_charger method
+    :param test_route: list of nodes
+    :param use_heuristic: flag is prolonged to _add_charger method
+    :return:
+    """
     # for testing, we add the depots
     test_route.insert(0, instance.depot)
     test_route.append(instance.depot)
@@ -249,6 +280,9 @@ def make_fuel_consumption_feasible(test_route, use_heuristic=True):
         else:
             current_fuel = next_fuel
             i += 1
+    # we remove depots again because we work with savings
+    del test_route[0]
+    del test_route[-1]
 
     return test_route
 

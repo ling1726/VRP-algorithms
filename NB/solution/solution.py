@@ -1,6 +1,6 @@
 import copy
 
-from NB.Solution.route import Route
+from NB.solution.route import Route
 from NB.instance.customer import Customer
 
 

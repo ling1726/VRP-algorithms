@@ -10,7 +10,7 @@ class SwapCustomersInter(Neighbourhood):
         """
         Generates neighbourhood of given solution x by swapping chargers from different routes. From each route it
         selects the customer using selection function. It creates neighbourhood by swapping customers
-        :param x: Solution class object
+        :param x: solution class object
         :return:
         """
         selected_customers = [self.selection_function(route) for route in x.routes]
@@ -21,18 +21,22 @@ class SwapCustomersInter(Neighbourhood):
                 # remove node from one route, add on partner index to other
                 route1 = neighbour.routes[i]
                 route1.strip_chargers()
+                if len(route1.nodes) == 0:
+                    continue
                 rn1_index = route1.nodes.index(selected_customers[i])
                 route1.remove_node(selected_customers[i])
 
                 route2 = neighbour.routes[j]
                 route2.strip_chargers()
+                if len(route2.nodes) == 0:
+                    continue
                 rn2_index = route2.nodes.index(selected_customers[j])
 
                 route2.remove_node(selected_customers[j])
 
                 route1.add_node_at(selected_customers[j], rn1_index)
                 # route1.add_node_at_best(farthest_customers[j])
-                checked = util.check_combination(route1.nodes)
+                checked = util.check_route(route1.nodes)
                 # combination is not feasible
                 if not checked:
                     continue
@@ -41,7 +45,7 @@ class SwapCustomersInter(Neighbourhood):
 
                 route2.add_node_at(selected_customers[i], rn2_index)
                 # route2.add_node_at_best(farthest_customers[i])
-                checked = util.check_combination(route2.nodes)
+                checked = util.check_route(route2.nodes)
                 # combination is not feasible
                 if not checked:
                     continue
